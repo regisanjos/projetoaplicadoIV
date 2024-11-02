@@ -1,21 +1,44 @@
 import prisma from '../config/db';
+import Joi from 'joi';
 
 const itemService = {
-  // Criar um novo item
+  
+  validateItemData(itemData) {
+    const schema = Joi.object({
+      name: Joi.string().required().messages({
+        'string.empty': 'O nome do item é obrigatório',
+      }),
+      category: Joi.string().required().messages({
+        'string.empty': 'A categoria do item é obrigatória',
+      }),
+      quantity: Joi.number().integer().min(1).required().messages({
+        'number.base': 'A quantidade deve ser um número inteiro',
+        'number.min': 'A quantidade deve ser pelo menos 1',
+      }),
+    });
+
+    const { error } = schema.validate(itemData);
+    if (error) {
+      throw new Error(error.details[0].message);
+    }
+  },
+
+ 
   async createItem(itemData) {
+    this.validateItemData(itemData);
     const item = await prisma.item.create({
       data: itemData,
     });
     return item;
   },
 
-  // Buscar todos os itens
+  
   async getAllItems() {
     const items = await prisma.item.findMany();
     return items;
   },
 
-  // Buscar um item pelo ID
+  
   async getItemById(itemId) {
     const item = await prisma.item.findUnique({
       where: { id: itemId },
@@ -26,20 +49,36 @@ const itemService = {
     return item;
   },
 
-  // Atualizar um item
+  
   async updateItem(itemId, itemData) {
-    const updatedItem = await prisma.item.update({
-      where: { id: itemId },
-      data: itemData,
-    });
-    return updatedItem;
+    this.validateItemData(itemData);
+
+    try {
+      const updatedItem = await prisma.item.update({
+        where: { id: itemId },
+        data: itemData,
+      });
+      return updatedItem;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new Error('Item não encontrado para atualização');
+      }
+      throw error;
+    }
   },
 
-  // Deletar um item
+  
   async deleteItem(itemId) {
-    await prisma.item.delete({
-      where: { id: itemId },
-    });
+    try {
+      await prisma.item.delete({
+        where: { id: itemId },
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new Error('Item não encontrado para deleção');
+      }
+      throw error;
+    }
   },
 };
 

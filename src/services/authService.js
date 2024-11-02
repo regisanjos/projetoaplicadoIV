@@ -24,7 +24,7 @@ const authService = {
       throw new Error(error.details[0].message);
     }
 
-    // Verificar se o email já está em uso
+    
     const existingUser = await prisma.user.findUnique({ where: { email: userData.email } });
     if (existingUser) {
       throw new Error('Este email já está em uso.');
@@ -40,7 +40,9 @@ const authService = {
       },
     });
 
-    return user;
+    
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   },
 
   async login(email, password) {
@@ -54,7 +56,7 @@ const authService = {
       throw new Error('Credenciais inválidas');
     }
 
-    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: config.jwtExpiration || '1h' });
 
     return token;
   },
@@ -78,6 +80,16 @@ const authService = {
   },
 
   async resetPassword(token, newPassword) {
+    const passwordSchema = Joi.string().min(6).required().messages({
+      'string.empty': 'A senha é obrigatória',
+      'string.min': 'A senha deve ter pelo menos 6 caracteres',
+    });
+
+    const { error } = passwordSchema.validate(newPassword);
+    if (error) {
+      throw new Error(error.details[0].message);
+    }
+
     const user = await prisma.user.findUnique({ where: { resetPasswordToken: token } });
     if (!user || user.resetPasswordTokenExpiry < new Date()) {
       throw new Error('Token de redefinição de senha inválido ou expirado');

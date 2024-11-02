@@ -1,131 +1,144 @@
 import prisma from '../config/db';
-import bcrypt from 'bcryptjs'; // Para criptografar senhas
+import bcrypt from 'bcryptjs';
+import Joi from 'joi';
 
 const userService = {
-  // Criar um novo usuário
-  async createUser(userData) {
-    try {
-      // 1. Verificar se o email já está em uso
-      const existingUser = await prisma.user.findUnique({
-        where: { email: userData.email },
-      });
+ 
+  validateUserData(userData) {
+    const schema = Joi.object({
+      email: Joi.string().email().required().messages({
+        'string.empty': 'O email é obrigatório',
+        'string.email': 'Formato de email inválido',
+      }),
+      password: Joi.string().min(6).optional().messages({
+        'string.min': 'A senha deve ter pelo menos 6 caracteres',
+      }),
+      name: Joi.string().required().messages({
+        'string.empty': 'O nome é obrigatório',
+      }),
+    });
 
-      if (existingUser) {
-        throw new Error('Este email já está em uso.');
-      }
-
-      // 2. Criptografar a senha
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
-
-      // 3. Criar o usuário no banco de dados (com a senha criptografada)
-      const user = await prisma.user.create({
-        data: { ...userData, password: hashedPassword },
-      });
-
-      return user;
-    } catch (error) {
-      // Tratar erros (como erros de validação ou de banco de dados)
-      throw new Error(`Erro ao criar usuário: ${error.message}`);
+    const { error } = schema.validate(userData);
+    if (error) {
+      throw new Error(error.details[0].message);
     }
+  },
+
+ 
+  sanitizeUser(user) {
+    const { password, ...sanitizedUser } = user;
+    return sanitizedUser;
+  },
+
+  
+  async createUser(userData) {
+    this.validateUserData(userData);
+
+    
+    const existingUser = await prisma.user.findUnique({
+      where: { email: userData.email },
+    });
+
+    if (existingUser) {
+      throw new Error('Este email já está em uso.');
+    }
+
+    
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+
+    
+    const user = await prisma.user.create({
+      data: { ...userData, password: hashedPassword },
+    });
+
+    return this.sanitizeUser(user);
   },
 
   // Buscar todos os usuários (apenas para administradores)
   async getAllUsers(adminId) {
-    try {
-      // 1. Verificar se o usuário é administrador
-      const admin = await this.getUserById(adminId);
-      if (!admin || !admin.isAdmin) {
-        throw new Error('Acesso negado: apenas administradores podem visualizar todos os usuários.');
-      }
-
-      const users = await prisma.user.findMany();
-      return users;
-    } catch (error) {
-      throw new Error(`Erro ao buscar usuários: ${error.message}`);
+    const admin = await this.getUserById(adminId);
+    if (!admin || !admin.isAdmin) {
+      throw new Error('Acesso negado: apenas administradores podem visualizar todos os usuários.');
     }
+
+    const users = await prisma.user.findMany();
+    return users.map(user => this.sanitizeUser(user));
   },
 
-  // Buscar um usuário pelo ID
+  
   async getUserById(userId) {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-      });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
 
-      if (!user) {
-        throw new Error('Usuário não encontrado');
-      }
-
-      return user;
-    } catch (error) {
-      throw new Error(`Erro ao buscar usuário: ${error.message}`);
+    if (!user) {
+      throw new Error('Usuário não encontrado');
     }
+
+    return this.sanitizeUser(user);
   },
 
-  // Atualizar um usuário
+
   async updateUser(userId, userData, requesterId) {
+    if (userId !== requesterId) {
+      const requester = await this.getUserById(requesterId);
+      if (!requester || !requester.isAdmin) {
+        throw new Error('Acesso negado: você não tem permissão para atualizar este usuário.');
+      }
+    }
+
+    this.validateUserData(userData);
+
+    // Criptografar a nova senha, se fornecida
+    if (userData.password) {
+      const saltRounds = 10;
+      userData.password = await bcrypt.hash(userData.password, saltRounds);
+    }
+
     try {
-      // 1. Verificar se o usuário tem permissão para atualizar (ex: se é o próprio usuário ou um administrador)
-      if (userId !== requesterId) {
-        const requester = await this.getUserById(requesterId);
-        if (!requester || !requester.isAdmin) {
-          throw new Error('Acesso negado: você não tem permissão para atualizar este usuário.');
-        }
-      }
-
-      // 2. Criptografar a nova senha, se fornecida
-      if (userData.password) {
-        const saltRounds = 10;
-        userData.password = await bcrypt.hash(userData.password, saltRounds);
-      }
-
       const updatedUser = await prisma.user.update({
         where: { id: userId },
         data: userData,
       });
-
-      return updatedUser;
+      return this.sanitizeUser(updatedUser);
     } catch (error) {
-      throw new Error(`Erro ao atualizar usuário: ${error.message}`);
+      if (error.code === 'P2025') {
+        throw new Error('Usuário não encontrado para atualização');
+      }
+      throw error;
     }
   },
 
   // Deletar um usuário (apenas para administradores)
   async deleteUser(userId, adminId) {
-    try {
-      // 1. Verificar se o usuário é administrador
-      const admin = await this.getUserById(adminId);
-      if (!admin || !admin.isAdmin) {
-        throw new Error('Acesso negado: apenas administradores podem deletar usuários.');
-      }
+    const admin = await this.getUserById(adminId);
+    if (!admin || !admin.isAdmin) {
+      throw new Error('Acesso negado: apenas administradores podem deletar usuários.');
+    }
 
+    try {
       await prisma.user.delete({
         where: { id: userId },
       });
     } catch (error) {
-      throw new Error(`Erro ao deletar usuário: ${error.message}`);
+      if (error.code === 'P2025') {
+        throw new Error('Usuário não encontrado para deleção');
+      }
+      throw error;
     }
   },
 
-  // Contar o número total de usuários
+ 
   async getTotalUsers() {
-    try {
-      const totalUsers = await prisma.user.count();
-      return totalUsers;
-    } catch (error) {
-      throw new Error(`Erro ao contar usuários: ${error.message}`);
-    }
+    const totalUsers = await prisma.user.count();
+    return totalUsers;
   },
 
-  // Verificar se um usuário é administrador
+ 
   async isAdmin(userId) {
-    try {
-      const user = await this.getUserById(userId);
-      return user && user.isAdmin;
-    } catch (error) {
-      throw new Error(`Erro ao verificar status de administrador: ${error.message}`);
-    }
+    const user = await this.getUserById(userId);
+    return user && user.isAdmin;
   },
 };
 

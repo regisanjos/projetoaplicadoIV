@@ -1,10 +1,14 @@
 import prisma from '../config/db';
 
 const donationService = {
-  // Criar uma nova doação
+  
   async createDonation(donationData) {
-    // Lógica para lidar com a criação de DonationItems, se necessário
     const { items, ...restOfDonationData } = donationData;
+
+    
+    if (items && items.some(item => !item.id || item.quantity <= 0)) {
+      throw new Error('Cada item deve ter um ID válido e uma quantidade maior que zero');
+    }
 
     const donation = await prisma.donation.create({
       data: {
@@ -16,32 +20,32 @@ const donationService = {
           })),
         },
       },
-      include: { items: true }, // Inclui os itens relacionados na resposta
+      include: { items: true },
     });
 
     return donation;
   },
 
-  // Buscar todas as doações
+  
   async getAllDonations() {
     const donations = await prisma.donation.findMany({
-      include: { 
-        user: true, 
+      include: {
+        user: true,
         disaster: true,
-        items: true 
+        items: true,
       },
     });
     return donations;
   },
 
-  // Buscar uma doação pelo ID
+  
   async getDonationById(donationId) {
     const donation = await prisma.donation.findUnique({
       where: { id: donationId },
-      include: { 
-        user: true, 
+      include: {
+        user: true,
         disaster: true,
-        items: true 
+        items: true,
       },
     });
     if (!donation) {
@@ -50,28 +54,59 @@ const donationService = {
     return donation;
   },
 
-  // Atualizar uma doação
+  
   async updateDonation(donationId, donationData) {
-    // Lógica para lidar com a atualização de DonationItems, se necessário
-    // ...
+    const { items, ...restOfDonationData } = donationData;
+
+   
+    const existingDonation = await prisma.donation.findUnique({ where: { id: donationId } });
+    if (!existingDonation) {
+      throw new Error('Doação não encontrada para atualização');
+    }
+
+    
+    if (items) {
+      
+      if (items.some(item => !item.id || item.quantity <= 0)) {
+        throw new Error('Cada item deve ter um ID válido e uma quantidade maior que zero');
+      }
+
+      await prisma.donationItem.deleteMany({ where: { donationId } });
+
+      await prisma.donationItem.createMany({
+        data: items.map(item => ({
+          donationId,
+          itemId: item.id,
+          quantity: item.quantity,
+        })),
+      });
+    }
 
     const updatedDonation = await prisma.donation.update({
       where: { id: donationId },
-      data: donationData,
-      include: { 
-        user: true, 
+      data: restOfDonationData,
+      include: {
+        user: true,
         disaster: true,
-        items: true 
+        items: true,
       },
     });
+
     return updatedDonation;
   },
 
-  // Deletar uma doação
+  
   async deleteDonation(donationId) {
-    await prisma.donation.delete({
-      where: { id: donationId },
-    });
+    try {
+      await prisma.donation.delete({
+        where: { id: donationId },
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new Error('Doação não encontrada para deleção');
+      }
+      throw error;
+    }
   },
 };
 

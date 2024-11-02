@@ -1,22 +1,49 @@
 import prisma from '../config/db';
+import Joi from 'joi';
 
 const disasterService = {
-  // Criar um novo registro de desastre
+ 
+  validateDisasterData(disasterData) {
+    const schema = Joi.object({
+      name: Joi.string().required().messages({
+        'string.empty': 'O nome do desastre é obrigatório',
+      }),
+      location: Joi.string().required().messages({
+        'string.empty': 'A localização do desastre é obrigatória',
+      }),
+      startDate: Joi.date().required().messages({
+        'date.base': 'A data de início é obrigatória e deve estar no formato de data',
+      }),
+      endDate: Joi.date().optional(),
+      status: Joi.string().valid('ACTIVE', 'INACTIVE', 'ENDED').required(),
+      description: Joi.string().optional(),
+      imageUrl: Joi.string().uri().optional(),
+    });
+
+    const { error } = schema.validate(disasterData);
+    if (error) {
+      throw new Error(error.details[0].message);
+    }
+  },
+
+ 
   async createDisaster(disasterData) {
-    // Validações adicionais podem ser feitas aqui, como verificar campos obrigatórios
+    
+    this.validateDisasterData(disasterData);
+
     const disaster = await prisma.disaster.create({
       data: disasterData,
     });
     return disaster;
   },
 
-  // Buscar todos os registros de desastres
+  
   async getAllDisasters() {
     const disasters = await prisma.disaster.findMany();
     return disasters;
   },
 
-  // Buscar um desastre pelo ID
+  
   async getDisasterById(disasterId) {
     const disaster = await prisma.disaster.findUnique({
       where: { id: disasterId },
@@ -27,8 +54,11 @@ const disasterService = {
     return disaster;
   },
 
-  // Atualizar um desastre
+  
   async updateDisaster(disasterId, disasterData) {
+    
+    this.validateDisasterData(disasterData);
+
     try {
       const updatedDisaster = await prisma.disaster.update({
         where: { id: disasterId },
@@ -43,7 +73,7 @@ const disasterService = {
     }
   },
 
-  // Deletar um desastre
+  
   async deleteDisaster(disasterId) {
     try {
       await prisma.disaster.delete({
