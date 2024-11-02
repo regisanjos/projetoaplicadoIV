@@ -4,11 +4,11 @@ import authMiddleware from '../middleware/authMiddleware';
 
 const router = Router();
 
-router.get('/donations', donationController.getAll);
 
-router.post('/donations', donationMiddleware, donationController.create);
-router.get('/donations', authMiddleware, donationController.getById);
-router.put('/donations', authMiddleware, donationController.update);
-router.delete('/donations', authMiddleware, donationController.delete);
+router.get('/donations', donationController.getAll);
+router.post('/donations', authMiddleware, donationController.create);
+router.get('/donations/:id', authMiddleware, donationController.getById);
+router.put('/donations/:id', authMiddleware, donationController.update);
+router.delete('/donations/:id', authMiddleware, donationController.delete);
 
 export default router;
