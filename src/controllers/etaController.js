@@ -23,7 +23,7 @@ const etaController = {
     }
   },
 
-  // Criar um novo registro de ETA
+  
   create: [
     ...etaController.validate('createETA'),
     async (req, res) => {
@@ -33,19 +33,18 @@ const etaController = {
           return res.status(400).json({ errors: errors.array() });
         }
 
-        const   
- eta = await etaService.createETA(req.body);
+        const eta = await etaService.createETA(req.body);
         res.status(201).json(eta);
       } catch (error) {
-        if (error.code === 'P2002'){
-          return  res.status(400).json({error:'ja existe um Eta para esta doação'});
+        if (error.code === 'P2002') {
+          return res.status(400).json({ error: 'Já existe um ETA para esta doação' });
         }
         res.status(500).json({ error: error.message });
       }
     },
   ],
 
-  // Buscar o ETA de uma doação pelo ID da doação
+  
   getByDonationId: [
     param('donationId').isInt().withMessage('O ID da doação deve ser um número inteiro'),
     async (req, res) => {
@@ -55,8 +54,7 @@ const etaController = {
           return res.status(400).json({ errors: errors.array() });
         }
 
-        const   
- donationId = parseInt(req.params.donationId);
+        const donationId = parseInt(req.params.donationId);
         const eta = await etaService.getETAByDonationId(donationId);
 
         if (!eta) {
@@ -70,7 +68,7 @@ const etaController = {
     },
   ],
 
-  // Atualizar o ETA de uma doação
+  
   update: [
     ...etaController.validate('updateETA'),
     async (req, res) => {
@@ -80,8 +78,7 @@ const etaController = {
           return res.status(400).json({ errors: errors.array() });
         }
 
-        const   
- etaId = parseInt(req.params.id);
+        const etaId = parseInt(req.params.id);
         const updatedETA = await etaService.updateETA(etaId, req.body);
 
         if (!updatedETA) {
@@ -95,7 +92,7 @@ const etaController = {
     },
   ],
 
-  // Deletar um ETA
+ 
   delete: [
     ...etaController.validate('deleteETA'),
     async (req, res) => {
@@ -105,22 +102,21 @@ const etaController = {
           return res.status(400).json({ errors: errors.array() });
         }
 
-        const   
- etaId = parseInt(req.params.id);
+        const etaId = parseInt(req.params.id);
         await etaService.deleteETA(etaId);
 
         res.status(204).end(); 
       } catch (error) {
-        if (error.code === 'P2025'){
-          return res.status(404).json({error:'ETA não encontrado '});
+        if (error.code === 'P2025') {
+          return res.status(404).json({ error: 'ETA não encontrado' });
         }
         res.status(500).json({ message: 'Erro ao excluir ETA', error });
       }
     },
   ],
 
-  // Listar todos os ETAs
-  getALLETAs: async (req, res) => {
+  
+  getAllETAs: async (req, res) => {
     try {
       const etas = await etaService.getAllETAs();
       res.status(200).json(etas);

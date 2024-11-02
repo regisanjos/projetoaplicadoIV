@@ -4,20 +4,20 @@ const disasterController = {
   async create(req, res) {
     try {
       const disaster = await disasterService.createDisaster(req.body);
-      res.status(201).json(disaster); // Corrigido de 'josn' para 'json'
+      res.status(201).json(disaster);
     } catch (error) {
-      res.status(500).json({ error: error.message }); // Corrigido 'resizeTo' para 'res'
+      res.status(500).json({ error: error.message });
     }
   },
 
   async update(req, res) {
     try {
-      const disasterId = parseInt(req.params.id); // Corrigido 'parms' para 'params'
+      const disasterId = parseInt(req.params.id);
 
       const updatedDisaster = await disasterService.updateDisaster(disasterId, req.body);
       res.json(updatedDisaster);
     } catch (error) {
-      res.status(error.statusCode || 500).json({ error: error.message }); // Corrigido 'erro' para 'error'
+      res.status(error.statusCode || 500).json({ error: error.message });
     }
   },
 

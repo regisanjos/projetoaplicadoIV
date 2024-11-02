@@ -2,7 +2,7 @@ import { body, param, validationResult } from 'express-validator';
 import donationService from '../services/donationService';
 
 const donationController = {
-  // Validações para criar uma nova doação
+  
   validate(method) {
     switch (method) {
       case 'createDonation': {
@@ -39,10 +39,9 @@ const donationController = {
     }
   },
 
-  // Criar uma nova doação
+  
   async create(req, res) {
     try {
-      // Checa por erros de validação
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -55,7 +54,7 @@ const donationController = {
     }
   },
 
-  // Buscar todas as doações
+  
   async getAll(req, res) {
     try {
       const donations = await donationService.getAllDonations();
@@ -65,7 +64,7 @@ const donationController = {
     }
   },
 
-  // Buscar uma doação pelo ID
+  
   async getById(req, res) {
     try {
       const errors = validationResult(req);
@@ -77,11 +76,11 @@ const donationController = {
       const donation = await donationService.getDonationById(donationId);
       res.json(donation);
     } catch (error) {
-      res.status(404).json({ error: error.message });
+      res.status(error.statusCode || 404).json({ error: error.message });
     }
   },
 
-  // Atualizar uma doação
+  
   async update(req, res) {
     try {
       const errors = validationResult(req);
@@ -97,7 +96,7 @@ const donationController = {
     }
   },
 
-  // Deletar uma doação
+  
   async delete(req, res) {
     try {
       const errors = validationResult(req);
@@ -113,16 +112,16 @@ const donationController = {
     }
   },
 
-getRecentDonations: async (req, res) =>{
-  try{
-    const limit =parseInt (req.query.limit) || 5;
-    const recentDonations = await donationService.getRecentDonations(limit);
-    res.json(recentDonations);
-  }catch (erro){
-    res.status(500).json({ erro: erro.message});
-  }
-},
-
+  
+  async getRecentDonations(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 5;
+      const recentDonations = await donationService.getRecentDonations(limit);
+      res.json(recentDonations);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
 };
 
 export default donationController;

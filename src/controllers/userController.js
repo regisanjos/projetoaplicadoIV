@@ -2,7 +2,7 @@ import userService from "../services/userService";
 import { body, validationResult, param } from "express-validator";
 
 const userController = {
-   create: [
+  create: [
     body("name")
       .notEmpty()
       .withMessage("O nome é obrigatório")
@@ -45,12 +45,9 @@ const userController = {
     },
   ],
 
-  
   getById: [
-    
     param("id").isUUID().withMessage("ID de usuário inválido"),
 
-    
     async (req, res) => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -59,16 +56,19 @@ const userController = {
 
       try {
         const user = await userService.getUserById(req.params.id);
+        
+        if (!user) {
+          return res.status(404).json({ error: "Usuário não encontrado" });
+        }
+
         res.status(200).json(user);
       } catch (error) {
-        res.status(404).json({ error: error.message });
+        res.status(500).json({ error: "Erro interno ao buscar usuário" });
       }
     },
   ],
 
-
   update: [
-
     param("id").isUUID().withMessage("ID de usuário inválido"),
     body("name")
       .optional()
@@ -80,7 +80,6 @@ const userController = {
       .isLength({ min: 6 })
       .withMessage("A senha deve ter pelo menos 6 caracteres"),
 
-    
     async (req, res) => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -93,6 +92,11 @@ const userController = {
           req.body,
           req.user.id
         );
+
+        if (!updatedUser) {
+          return res.status(404).json({ error: "Usuário não encontrado" });
+        }
+
         res.status(200).json(updatedUser);
       } catch (error) {
         res.status(500).json({ error: error.message });
@@ -100,12 +104,9 @@ const userController = {
     },
   ],
 
-  
   delete: [
-    
     param("id").isUUID().withMessage("ID de usuário inválido"),
 
-    
     async (req, res) => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {

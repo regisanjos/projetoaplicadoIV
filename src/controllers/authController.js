@@ -1,8 +1,8 @@
-import authService from "../Services/authService";
+import authService from "../services/authService";
 
 const validateRequestBody = (fields, req, res) => {
   for (const field of fields) {
-    if (!req.body[field]) {
+    if (!req.body[field] || req.body[field].trim() === "") {
       return res.status(400).json({ error: `${field.charAt(0).toUpperCase() + field.slice(1)} é obrigatório.` });
     }
   }
