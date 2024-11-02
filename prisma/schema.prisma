@@ -1,0 +1,133 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADIMIN
+}
+
+enum DonationStatus {
+  PENDING
+  APROVED
+  REJECTED
+}
+
+enum ExitStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum DisasterStatus {
+  ACTIVE
+  INACTIVE
+  ENDED
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  password      String
+  role          Role
+  street        String?
+  city          String?
+  state         String?
+  zipCode       String?
+  country       String?
+  bankName      String?
+  accountNumber String?
+  routingNumber String?
+  pixKey        String?
+  paypalEmail   String?
+  Donations     Donation[]
+  notifications Notification[]
+  createdAt     DateTime       @default(now())
+  updateAt      DateTime       @updatedAt
+}
+
+model Disaster {
+  id           Int            @id @default(autoincrement())
+  name         String
+  location     String
+  startDate    DateTime
+  endDate      DateTime?
+  status       DisasterStatus @default(ACTIVE)
+  discripition String?
+  imageUrl     String?
+  donation     Donation[]
+}
+
+model Item {
+  id            Int            @id @default(autoincrement())
+  name          String
+  category      String
+  quantity      Int
+  donationItems DonationItem[]
+}
+
+model Donation {
+  id               Int            @id @default(autoincrement())
+  type             String
+  description      String
+  status           DonationStatus @default(PENDING)
+  //amount           Decimal?       @db.Decimal(10, 2)
+  //currency         String?
+  recurring        Boolean
+  frequency        String?
+  nextDonationDate DateTime?
+  userId           Int
+  user             User           @relation(fields: [userId], references: [id])
+  disasterId       Int
+  disaster         Disaster       @relation(fields: [disasterId], references: [id])
+  donationItems    DonationItem[]
+  eta              ETA?
+  createdAt        DateTime       @default(now())
+  updateAt         DateTime       @updatedAt
+}
+
+model DonationItem {
+  donationId Int
+  itemId     Int
+  quanty     Int
+  donation   Donation @relation(fields: [donationId], references: [id])
+  item       Item     @relation(fields: [itemId], references: [id])
+
+  @@id([donationId, itemId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ETA {
+  id               Int      @id @default(autoincrement())
+  donationId       Int      @unique
+  donation         Donation @relation(fields: [donationId], references: [id])
+  estimatedArrival DateTime
+  currentLocation  String
+  status           String?
+  transporter      String?
+  trackinNumber    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
