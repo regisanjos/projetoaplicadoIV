@@ -1,14 +1,14 @@
-import { cpf as cpfValidator } from 'cpf-cnpj-validator';
+import { cpf, cnpj } from 'cpf-cnpj-validator';
 
 export const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
 };
 
-export const isValidCPF = (cpf) => {
-    return cpfValidator.isValid (cpf);
+export const isValidCPF = (cpfValue) => {
+  return cpf.isValid(cpfValue);
 };
 
-export const isValidCNPJ = (cnpj) => {
-    return cpfValidator.isValid(cnpj);
+export const isValidCNPJ = (cnpjValue) => {
+  return cnpj.isValid(cnpjValue);
 };

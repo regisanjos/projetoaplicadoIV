@@ -1,13 +1,12 @@
 import sharp from 'sharp';
 
-export const resizeimage = async (imagePath, width, height) =>{
-    try{
-    const outputPath = `resezed-${width}X${height}-${imagePath}`;
+export const resizeImage = async (imagePath, width, height) => {
+  try {
+    const outputPath = `resized-${width}x${height}-${imagePath}`;
     await sharp(imagePath).resize(width, height).toFile(outputPath);
     return outputPath;
-    }catch (erro){
-        console.error('Erro ao redimencionar imagem:', erro);
-        throw new Error('Erro ao pasar imagem');
-    }
+  } catch (error) {
+    console.error('Erro ao redimensionar imagem:', error);
+    throw new Error('Erro ao processar imagem');
+  }
 };
-

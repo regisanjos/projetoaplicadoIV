@@ -9,17 +9,35 @@ async function connectToDatabase() {
         await prisma.$connect();
         console.log('Conectado ao banco de dados!');
     } catch (error) {
-        console.error('Erro ao conectar ao banco de dados:', error);
+        console.error('Erro ao conectar ao banco de dados:', error.message);
         process.exit(1); 
     }
 }
 
-const startServer = async () => {
+async function startServer() {
     await connectToDatabase();
 
-    app.listen(config.port, () => {
-        console.log(`Servidor rodando na porta ${config.port}`);
+    const port = config.port || 3000;
+    const server = app.listen(port, () => {
+        console.log(`Servidor rodando na porta ${port}`);
     });
-};
+
+    // Encerrar conexão Prisma ao finalizar o servidor
+    process.on('SIGTERM', async () => {
+        console.log('Encerrando servidor...');
+        await prisma.$disconnect();
+        server.close(() => {
+            console.log('Servidor encerrado');
+        });
+    });
+
+    process.on('SIGINT', async () => {
+        console.log('Encerrando servidor...');
+        await prisma.$disconnect();
+        server.close(() => {
+            console.log('Servidor encerrado');
+        });
+    });
+}
 
 startServer();
