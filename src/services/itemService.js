@@ -1,7 +1,6 @@
 const prisma = require('../config/db');
 const Joi = require('joi');
 
-
 const itemService = {
   
   validateItemData(itemData) {
@@ -24,35 +23,48 @@ const itemService = {
     }
   },
 
- 
+  
   async createItem(itemData) {
-    this.validateItemData(itemData);
-    const item = await prisma.item.create({
-      data: itemData,
-    });
-    return item;
+    this.validateItemData(itemData); // Validação dos dados
+
+    try {
+      const item = await prisma.item.create({
+        data: itemData,
+      });
+      return item;
+    } catch (error) {
+      throw new Error(`Erro ao criar item: ${error.message}`);
+    }
   },
 
   
   async getAllItems() {
-    const items = await prisma.item.findMany();
-    return items;
+    try {
+      const items = await prisma.item.findMany();
+      return items;
+    } catch (error) {
+      throw new Error(`Erro ao buscar todos os itens: ${error.message}`);
+    }
   },
 
   
   async getItemById(itemId) {
-    const item = await prisma.item.findUnique({
-      where: { id: itemId },
-    });
-    if (!item) {
-      throw new Error('Item não encontrado');
+    try {
+      const item = await prisma.item.findUnique({
+        where: { id: itemId },
+      });
+      if (!item) {
+        throw new Error('Item não encontrado');
+      }
+      return item;
+    } catch (error) {
+      throw new Error(`Erro ao buscar item: ${error.message}`);
     }
-    return item;
   },
 
   
   async updateItem(itemId, itemData) {
-    this.validateItemData(itemData);
+    this.validateItemData(itemData); // Validação dos dados
 
     try {
       const updatedItem = await prisma.item.update({
@@ -64,7 +76,7 @@ const itemService = {
       if (error.code === 'P2025') {
         throw new Error('Item não encontrado para atualização');
       }
-      throw error;
+      throw new Error(`Erro ao atualizar item: ${error.message}`);
     }
   },
 
@@ -78,7 +90,7 @@ const itemService = {
       if (error.code === 'P2025') {
         throw new Error('Item não encontrado para deleção');
       }
-      throw error;
+      throw new Error(`Erro ao deletar item: ${error.message}`);
     }
   },
 };

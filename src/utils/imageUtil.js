@@ -1,9 +1,13 @@
 const sharp = require('sharp');
+const path = require('path');
 
-
-export const resizeImage = async (imagePath, width, height) => {
+const resizeImage = async (imagePath, width, height) => {
   try {
-    const outputPath = `resized-${width}x${height}-${imagePath}`;
+    const outputPath = path.join(
+      path.dirname(imagePath),
+      `resized-${width}x${height}-${path.basename(imagePath)}`
+    );
+
     await sharp(imagePath).resize(width, height).toFile(outputPath);
     return outputPath;
   } catch (error) {
@@ -12,5 +16,4 @@ export const resizeImage = async (imagePath, width, height) => {
   }
 };
 
-module.exports = imageUtil;
-
+module.exports = { resizeImage };

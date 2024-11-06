@@ -1,24 +1,28 @@
-const jwt = require('jsonwebtoken'); // Corrigido o nome do pacote
-const config = require('../config');  // Certifique-se de que o caminho esteja correto
+const jwt = require('jsonwebtoken'); 
+const config = require('../config/config'); 
 const crypto = require('crypto');
 
 
-
-export const generateAuthToken = (userId) => {
+const generateAuthToken = (userId) => {
   return jwt.sign({ userId }, config.jwtSecret, { expiresIn: '1h' });
 };
 
-export const verifyAuthToken = (token) => {
+
+const verifyAuthToken = (token) => {
   try {
-    const decoded = jwt.verify(token, config.jwtSecret);
-    return decoded;
+    return jwt.verify(token, config.jwtSecret);
   } catch (error) {
-    throw new Error('Token inválido');
+    throw new Error(`Token inválido: ${error.message}`);
   }
 };
 
-export const generateRandomToken = () => {
+
+const generateRandomToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
 
-module.exports = tokenUtil;
+module.exports = {
+  generateAuthToken,
+  verifyAuthToken,
+  generateRandomToken,
+};

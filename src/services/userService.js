@@ -2,10 +2,8 @@ const prisma = require('../config/db');
 const bcrypt = require('bcryptjs');
 const Joi = require('joi');
 
-
-
 const userService = {
- 
+  
   validateUserData(userData) {
     const schema = Joi.object({
       email: Joi.string().email().required().messages({
@@ -26,7 +24,7 @@ const userService = {
     }
   },
 
- 
+  
   sanitizeUser(user) {
     const { password, ...sanitizedUser } = user;
     return sanitizedUser;
@@ -40,7 +38,6 @@ const userService = {
     const existingUser = await prisma.user.findUnique({
       where: { email: userData.email },
     });
-
     if (existingUser) {
       throw new Error('Este email já está em uso.');
     }
@@ -49,7 +46,6 @@ const userService = {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
 
-    
     const user = await prisma.user.create({
       data: { ...userData, password: hashedPassword },
     });
@@ -57,15 +53,14 @@ const userService = {
     return this.sanitizeUser(user);
   },
 
-  // Buscar todos os usuários (apenas para administradores)
+  
   async getAllUsers(adminId) {
-    const admin = await this.getUserById(adminId);
-    if (!admin || !admin.isAdmin) {
+    if (!(await this.isAdmin(adminId))) {
       throw new Error('Acesso negado: apenas administradores podem visualizar todos os usuários.');
     }
 
     const users = await prisma.user.findMany();
-    return users.map(user => this.sanitizeUser(user));
+    return users.map(this.sanitizeUser);
   },
 
   
@@ -81,18 +76,15 @@ const userService = {
     return this.sanitizeUser(user);
   },
 
-
+  
   async updateUser(userId, userData, requesterId) {
-    if (userId !== requesterId) {
-      const requester = await this.getUserById(requesterId);
-      if (!requester || !requester.isAdmin) {
-        throw new Error('Acesso negado: você não tem permissão para atualizar este usuário.');
-      }
+    if (userId !== requesterId && !(await this.isAdmin(requesterId))) {
+      throw new Error('Acesso negado: você não tem permissão para atualizar este usuário.');
     }
 
     this.validateUserData(userData);
 
-    // Criptografar a nova senha, se fornecida
+    
     if (userData.password) {
       const saltRounds = 10;
       userData.password = await bcrypt.hash(userData.password, saltRounds);
@@ -112,10 +104,9 @@ const userService = {
     }
   },
 
-  // Deletar um usuário (apenas para administradores)
+  
   async deleteUser(userId, adminId) {
-    const admin = await this.getUserById(adminId);
-    if (!admin || !admin.isAdmin) {
+    if (!(await this.isAdmin(adminId))) {
       throw new Error('Acesso negado: apenas administradores podem deletar usuários.');
     }
 
@@ -131,16 +122,15 @@ const userService = {
     }
   },
 
- 
+  
   async getTotalUsers() {
-    const totalUsers = await prisma.user.count();
-    return totalUsers;
+    return await prisma.user.count();
   },
 
- 
+  
   async isAdmin(userId) {
     const user = await this.getUserById(userId);
-    return user && user.isAdmin;
+    return user && user.role === 'ADMIN';
   },
 };
 

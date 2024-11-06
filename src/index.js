@@ -1,8 +1,6 @@
 const app = require('./app');
-const config = require('./backend/src/config/config'); // Certifique-se de que o caminho esteja correto
+const config = require('./config/config');
 const { PrismaClient } = require('@prisma/client');
-
-
 
 const prisma = new PrismaClient();
 
@@ -12,7 +10,20 @@ async function connectToDatabase() {
         console.log('Conectado ao banco de dados!');
     } catch (error) {
         console.error('Erro ao conectar ao banco de dados:', error.message);
-        process.exit(1); 
+        process.exit(1);
+    }
+}
+
+async function shutdown(server) {
+    console.log('Encerrando servidor...');
+    try {
+        await prisma.$disconnect();
+    } catch (error) {
+        console.error('Erro ao desconectar do banco de dados:', error.message);
+    } finally {
+        server.close(() => {
+            console.log('Servidor encerrado');
+        });
     }
 }
 
@@ -24,22 +35,9 @@ async function startServer() {
         console.log(`Servidor rodando na porta ${port}`);
     });
 
-    // Encerrar conexão Prisma ao finalizar o servidor
-    process.on('SIGTERM', async () => {
-        console.log('Encerrando servidor...');
-        await prisma.$disconnect();
-        server.close(() => {
-            console.log('Servidor encerrado');
-        });
-    });
-
-    process.on('SIGINT', async () => {
-        console.log('Encerrando servidor...');
-        await prisma.$disconnect();
-        server.close(() => {
-            console.log('Servidor encerrado');
-        });
-    });
+    // Eventos para encerrar o servidor
+    process.on('SIGTERM', () => shutdown(server));
+    process.on('SIGINT', () => shutdown(server));
 }
 
 startServer();

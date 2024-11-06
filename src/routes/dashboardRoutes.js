@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const dashboardController = require("../controllers/dashboardController");
-const authMiddleware = require("../middleware/authMiddleware");
-const { validateFilterOptions } = require("../middleware/validation");
+const authMiddleware = require("../middlewares/authMiddleware");
+const { validateFilterOptions } = require("../middlewares/validation");
 
 
 

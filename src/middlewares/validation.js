@@ -1,6 +1,6 @@
 const { query, validationResult } = require('express-validator');
 
-export const validateFilterOptions = [
+const validateFilterOptions = [
   query('status')
     .optional()
     .isIn(['PENDING', 'APPROVED', 'REJECTED'])
@@ -20,4 +20,4 @@ export const validateFilterOptions = [
   }
 ];
 
-module.exports = validation.js;
+module.exports = { validateFilterOptions }; 

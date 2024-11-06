@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const notificationService = require('../services/notificationService');
-const authMiddleware = require('../middleware/authMiddleware');
+const authMiddleware = require('../middlewares/authMiddleware');
 
 
 

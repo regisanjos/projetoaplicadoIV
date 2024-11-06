@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const donationController = require("../controllers/donationController");
-const authMiddleware = require("../middleware/authMiddleware");
+const authMiddleware = require("../middlewares/authMiddleware");
 
 
 

@@ -1,15 +1,52 @@
 const prisma = require('../config/db');
-
+const Joi = require('joi');
+const notificationService = require('./notificationService'); // Certifique-se de que este service esteja implementado e configurado
 
 const donationService = {
   
-  async createDonation(donationData) {
-    const { items, ...restOfDonationData } = donationData;
+  validateDonationData(donationData) {
+    const schema = Joi.object({
+      userId: Joi.number().integer().required().messages({
+        'number.base': 'O ID do usuário deve ser um número inteiro',
+        'any.required': 'O ID do usuário é obrigatório',
+      }),
+      disasterId: Joi.number().integer().required().messages({
+        'number.base': 'O ID do desastre deve ser um número inteiro',
+        'any.required': 'O ID do desastre é obrigatório',
+      }),
+      type: Joi.string().required().messages({
+        'string.empty': 'O tipo de doação é obrigatório',
+      }),
+      description: Joi.string().required().messages({
+        'string.empty': 'A descrição da doação é obrigatória',
+      }),
+      status: Joi.string().valid('PENDING', 'APPROVED', 'REJECTED').default('PENDING'),
+      items: Joi.array().items(
+        Joi.object({
+          id: Joi.number().integer().required().messages({
+            'number.base': 'O ID do item deve ser um número inteiro',
+            'any.required': 'Cada item deve ter um ID',
+          }),
+          quantity: Joi.number().integer().min(1).required().messages({
+            'number.base': 'A quantidade do item deve ser um número inteiro',
+            'number.min': 'A quantidade do item deve ser maior que zero',
+            'any.required': 'Cada item deve ter uma quantidade',
+          }),
+        })
+      ).required(),
+    });
 
-    
-    if (items && items.some(item => !item.id || item.quantity <= 0)) {
-      throw new Error('Cada item deve ter um ID válido e uma quantidade maior que zero');
+    const { error } = schema.validate(donationData);
+    if (error) {
+      throw new Error(error.details[0].message);
     }
+  },
+
+  
+  async createDonation(donationData) {
+    this.validateDonationData(donationData); // Validação de dados
+
+    const { items, ...restOfDonationData } = donationData;
 
     const donation = await prisma.donation.create({
       data: {
@@ -57,23 +94,20 @@ const donationService = {
 
   
   async updateDonation(donationId, donationData) {
-    const { items, ...restOfDonationData } = donationData;
+    this.validateDonationData(donationData); // Validação de dados
 
-   
-    const existingDonation = await prisma.donation.findUnique({ where: { id: donationId } });
+    const { items, status, ...restOfDonationData } = donationData;
+
+    const existingDonation = await prisma.donation.findUnique({
+      where: { id: donationId },
+    });
     if (!existingDonation) {
       throw new Error('Doação não encontrada para atualização');
     }
 
     
     if (items) {
-      
-      if (items.some(item => !item.id || item.quantity <= 0)) {
-        throw new Error('Cada item deve ter um ID válido e uma quantidade maior que zero');
-      }
-
       await prisma.donationItem.deleteMany({ where: { donationId } });
-
       await prisma.donationItem.createMany({
         data: items.map(item => ({
           donationId,
@@ -85,13 +119,21 @@ const donationService = {
 
     const updatedDonation = await prisma.donation.update({
       where: { id: donationId },
-      data: restOfDonationData,
+      data: { ...restOfDonationData, status },
       include: {
         user: true,
         disaster: true,
         items: true,
       },
     });
+
+    
+    if (status && status !== existingDonation.status) {
+      const userId = updatedDonation.userId;
+      const title = 'Atualização de Doação';
+      const message = `Sua doação foi atualizada para o status: ${status}.`;
+      await notificationService.createNotification(userId, title, message);
+    }
 
     return updatedDonation;
   },
@@ -109,30 +151,6 @@ const donationService = {
       throw error;
     }
   },
-  
-  async updateDonation(donationId, donationData) {
-    const updatedDonation = await prisma.donation.update({
-      where: { id: donationId },
-      data: donationData,
-    });
-
-    // Enviar notificação ao doador sobre a atualização do status
-    if (donationData.status) {
-      const userId = updatedDonation.userId;
-      const title = 'Atualização de Doação';
-      const message = `Sua doação foi atualizada para o status: ${donationData.status}.`;
-      await notificationService.createNotification(userId, title, message);
-    }
-
-    return updatedDonation;
-  },
 };
 
 module.exports = donationService;
-
-
-
-
-
-
-

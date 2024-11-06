@@ -1,39 +1,38 @@
 const etaService = require('../services/etaService');
 const { body, param, validationResult } = require('express-validator');
 
+// Função de validação movida para fora de etaController
+const validate = (method) => {
+  switch (method) {
+    case 'createETA': {
+      return [
+        body('donationId').isInt().withMessage('O ID da doação deve ser um número inteiro'),
+        body('estimatedArrival').isISO8601().withMessage('A data de chegada estimada deve estar em formato ISO 8601'),
+        body('currentLocation').notEmpty().withMessage('A localização atual é obrigatória'),
+      ];
+    }
+    case 'getETAById':
+    case 'updateETA':
+    case 'deleteETA': {
+      return [
+        param('id').isInt().withMessage('O ID do ETA deve ser um número inteiro'),
+      ];
+    }
+    default:
+      return [];
+  }
+};
 
 const etaController = {
-  validate(method) {
-    switch (method) {
-      case 'createETA': {
-        return [
-          body('donationId').isInt().withMessage('O ID da doação deve ser um número inteiro'),
-          body('estimatedArrival').isISO8601().withMessage('A data de chegada estimada deve estar em formato ISO 8601'),
-          body('currentLocation').notEmpty().withMessage('A localização atual é obrigatória'),
-        ];
-      }
-      case 'getETAById':
-      case 'updateETA':
-      case 'deleteETA': {
-        return [
-          param('id').isInt().withMessage('O ID do ETA deve ser um número inteiro'),
-        ];
-      }
-      default:
-        return [];
-    }
-  },
-
-  
   create: [
-    ...etaController.validate('createETA'),
+    ...validate('createETA'),
     async (req, res) => {
-      try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
-        }
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
+      try {
         const eta = await etaService.createETA(req.body);
         res.status(201).json(eta);
       } catch (error) {
@@ -45,16 +44,15 @@ const etaController = {
     },
   ],
 
-  
   getByDonationId: [
     param('donationId').isInt().withMessage('O ID da doação deve ser um número inteiro'),
     async (req, res) => {
-      try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
-        }
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
+      try {
         const donationId = parseInt(req.params.donationId);
         const eta = await etaService.getETAByDonationId(donationId);
 
@@ -69,16 +67,15 @@ const etaController = {
     },
   ],
 
-  
   update: [
-    ...etaController.validate('updateETA'),
+    ...validate('updateETA'),
     async (req, res) => {
-      try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
-        }
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
+      try {
         const etaId = parseInt(req.params.id);
         const updatedETA = await etaService.updateETA(etaId, req.body);
 
@@ -93,20 +90,19 @@ const etaController = {
     },
   ],
 
- 
   delete: [
-    ...etaController.validate('deleteETA'),
+    ...validate('deleteETA'),
     async (req, res) => {
-      try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
-        }
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
+      try {
         const etaId = parseInt(req.params.id);
         await etaService.deleteETA(etaId);
 
-        res.status(204).end(); 
+        res.status(204).end();
       } catch (error) {
         if (error.code === 'P2025') {
           return res.status(404).json({ error: 'ETA não encontrado' });
@@ -116,8 +112,7 @@ const etaController = {
     },
   ],
 
-  
-  getAllETAs: async (req, res) => {
+  getAll: async (req, res) => {
     try {
       const etas = await etaService.getAllETAs();
       res.status(200).json(etas);
