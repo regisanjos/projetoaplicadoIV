@@ -1,6 +1,9 @@
-import { Router } from 'express';
-import etaController from '../controllers/etaController';
-import authMiddleware from '../middlewares/authMiddleware';
+const { Router } = require('express');
+const etaController = require('../controllers/etaController');
+const authMiddleware = require('../middlewares/authMiddleware');
+
+
+
 
 const router = Router();
 
@@ -11,4 +14,4 @@ router.put('/etas/:id', authMiddleware, etaController.update);
 router.delete('/etas/:id', authMiddleware, etaController.delete);
 router.get('/etas', authMiddleware, etaController.getAll);
 
-export default router;
+module.exports = router;

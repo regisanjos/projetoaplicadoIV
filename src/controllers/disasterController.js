@@ -1,4 +1,5 @@
-import disasterService from "../services/disasterService";
+const disasterService = require("../services/disasterService");
+
 
 const disasterController = {
   async create(req, res) {
@@ -32,4 +33,4 @@ const disasterController = {
   },
 };
 
-export default disasterController;
+module.exports = disasterController;

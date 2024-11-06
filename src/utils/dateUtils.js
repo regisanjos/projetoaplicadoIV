@@ -12,3 +12,5 @@ export const daysBetweenDates = (date1, date2) => {
     const diffMs = Math.abs(date1 - date2);
     return Math.round(diffMs / oneDay);
 };
+
+module.exports = dateUtil;

@@ -1,6 +1,8 @@
-import prisma from '../config/db';
-import bcrypt from 'bcryptjs';
-import Joi from 'joi';
+const prisma = require('../config/db');
+const bcrypt = require('bcryptjs');
+const Joi = require('joi');
+
+
 
 const userService = {
  
@@ -142,4 +144,4 @@ const userService = {
   },
 };
 
-export default userService;
+module.exports = userService;

@@ -1,7 +1,9 @@
-// backend/src/routes/notificationRoutes.js
-import { Router } from 'express';
-import notificationService from '../services/notificationService';
-import authMiddleware from '../middleware/authMiddleware';
+const { Router } = require('express');
+const notificationService = require('../services/notificationService');
+const authMiddleware = require('../middleware/authMiddleware');
+
+
+
 
 const router = Router();
 
@@ -15,4 +17,4 @@ router.get('/notifications', authMiddleware, async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

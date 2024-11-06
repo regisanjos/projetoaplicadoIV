@@ -1,6 +1,8 @@
-import jwt from 'jsonwebtoken';
-import config from '../config/config';
-import crypto from 'crypto';
+const jwt = require('jsonwebtoken'); // Corrigido o nome do pacote
+const config = require('../config');  // Certifique-se de que o caminho esteja correto
+const crypto = require('crypto');
+
+
 
 export const generateAuthToken = (userId) => {
   return jwt.sign({ userId }, config.jwtSecret, { expiresIn: '1h' });
@@ -18,3 +20,5 @@ export const verifyAuthToken = (token) => {
 export const generateRandomToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
+
+module.exports = tokenUtil;

@@ -1,4 +1,5 @@
-import prisma from '../config/db';
+const prisma = require('../config/db');
+
 
 const donationService = {
   
@@ -127,7 +128,7 @@ const donationService = {
   },
 };
 
-export default donationService;
+module.exports = donationService;
 
 
 

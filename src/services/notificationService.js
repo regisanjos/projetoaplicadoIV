@@ -1,5 +1,6 @@
-// backend/src/services/notificationService.js
-import prisma from '../config/db';
+const prisma = require('../config/db');
+
+
 
 const notificationService = {
   async createNotification(userId, title, message) {
@@ -20,4 +21,4 @@ const notificationService = {
   },
 };
 
-export default notificationService;
+module.exports = notificationService;

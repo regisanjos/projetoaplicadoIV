@@ -4,12 +4,11 @@ module.exports = {
     port: process.env.PORT || 3000,
     databaseUrl: process.env.DATABASE_URL,
     jwtSecret: process.env.JWT_SECRET,
-    emailService:{
+    jwtExpiration: process.env.JWT_EXPIRATION || '1h', // Expiração do JWT padrão de 1 hora
+    emailService: {
         host: process.env.EMAIL_HOST,
         port: process.env.EMAIL_PORT,
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
-    
 };
-

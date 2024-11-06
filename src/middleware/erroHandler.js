@@ -14,5 +14,5 @@ const errorHandler = (err, req, res, next) => {
     res.status(statusCode).json({ error: message });
   };
   
-  export default errorHandler;
+  module.exports = errorHandler;
   

@@ -1,6 +1,9 @@
-import { Router } from 'express';
-import userController from '../controllers/userController';
-import authMiddleware from '../middleware/authMiddleware';
+const { Router } = require('express');
+const userController = require('../controllers/userController');
+const authMiddleware = require('../middleware/authMiddleware');
+
+
+
 
 const router = Router();
 
@@ -10,7 +13,7 @@ router.get('/users/:id', authMiddleware, userController.getById);
 router.put('/users/:id', authMiddleware, userController.update);
 router.delete('/users/:id', authMiddleware, userController.delete);
 
-export default router;
+module.exports = router;
 
 
 

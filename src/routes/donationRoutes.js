@@ -1,6 +1,8 @@
-import { Router } from "express";
-import donationController from "../controllers/donationController";
-import authMiddleware from '../middleware/authMiddleware';
+const { Router } = require("express");
+const donationController = require("../controllers/donationController");
+const authMiddleware = require("../middleware/authMiddleware");
+
+
 
 const router = Router();
 
@@ -13,4 +15,4 @@ router.delete('/donations/:id', authMiddleware, donationController.delete);
 router.post('/', authMiddleware, donationController.validate('createDonation'), donationController.create
 );
 
-export default router;
+module.exports = router;

@@ -1,15 +1,16 @@
-import express from 'express';
-import cors from 'cors';
-import authRoutes from './routes/authRoutes';
-import userRoutes from './routes/userRoutes';
-import donationRoutes from './routes/donationRoutes';
-import disasterRoutes from './routes/disasterRoutes';
-import donationExitRoutes from './routes/donationExitRoutes';
-import dashboardRoutes from './routes/dashboardRoutes';
-import etaRoutes from './routes/etaRoutes';
-import errorHandler from './middleware/errorHandler';
-import loggerMiddleware from './middleware/loggerMiddleware';
-import notificationRoutes from './routes/notificationRoutes';
+const express = require('express');
+const cors = require('cors');
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const donationRoutes = require('./routes/donationRoutes');
+const disasterRoutes = require('./routes/disasterRoutes');
+const donationExitRoutes = require('./routes/donationExitRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const etaRoutes = require('./routes/etaRoutes');
+const errorHandler = require('./middleware/errorHandler');
+const loggerMiddleware = require('./middleware/loggerMiddleware');
+const notificationRoutes = require('./routes/notificationRoutes');
+
 const app = express();
 
 app.use(cors());
@@ -26,5 +27,5 @@ app.use('/api/etas', etaRoutes);
 app.use('/api', notificationRoutes);
 app.use(errorHandler);
 
-export default app;
+module.exports = app;
 

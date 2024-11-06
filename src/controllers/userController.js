@@ -1,5 +1,7 @@
-import userService from "../services/userService";
-import { body, validationResult, param } from "express-validator";
+const userService = require("../services/userService");
+const { body, validationResult, param } = require("express-validator");
+
+
 
 const userController = {
   create: [
@@ -123,4 +125,4 @@ const userController = {
   ],
 };
 
-export default userController;
+module.exports = userController;

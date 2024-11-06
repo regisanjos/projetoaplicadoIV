@@ -1,5 +1,6 @@
-import etaService from '../services/etaService';
-import { body, param, validationResult } from 'express-validator';
+const etaService = require('../services/etaService');
+const { body, param, validationResult } = require('express-validator');
+
 
 const etaController = {
   validate(method) {
@@ -126,4 +127,4 @@ const etaController = {
   },
 };
 
-export default etaController;
+module.exports = etaController;

@@ -1,9 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+const { PrismaClient } = require("@prisma/client");
+
 const prisma = new PrismaClient();
 
-Process.on('SIGINT', async() => {
+process.on('SIGINT', async() => {
     await prisma.$disconnect();
     process.exit(0);
 });
 
-export default prisma;
+module.exports = prisma;

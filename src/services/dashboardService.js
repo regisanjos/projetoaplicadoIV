@@ -1,7 +1,11 @@
-import prisma from '../config/db';
-import userService from './userService';
-import donationService from './donationService';
-import disasterService from './disasterService';
+const prisma = require('../config/db');
+const userService = require('./userService');
+const donationService = require('./donationService');
+const disasterService = require('./disasterService');
+
+
+
+
 
 const dashboardService = {
   
@@ -105,4 +109,4 @@ const dashboardService = {
   },
 };
 
-export default dashboardService;
+module.exports = dashboardService;

@@ -1,5 +1,5 @@
-import nodemailer from "nodemailer";
-import config from "../config/config";
+const nodemailer = require("nodemailer");
+const config = require("../config/config"); // Certifique-se de que o caminho esteja correto
 
 const transporter = nodemailer.createTransport({
   host: config.email.host,
@@ -27,4 +27,4 @@ const sendEmail = async (to, subject, text) => {
   }
 };
 
-export default sendEmail;
+module.exports = sendEmail;

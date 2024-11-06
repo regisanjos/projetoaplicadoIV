@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+const { PrismaClient } = require('@prisma/client');
+
 const prisma = new PrismaClient();
 
 const etaService = {
@@ -57,4 +58,4 @@ const etaService = {
   },
 };
 
-export default etaService;
+module.exports = etaService;

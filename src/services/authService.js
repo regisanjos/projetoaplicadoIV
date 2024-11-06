@@ -1,10 +1,11 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import config from '../config/config';
-import prisma from '../config/db';
-import Joi from 'joi';
-import { generateRandomToken } from '../utils/tokenUtils';
-import sendEmail from '../utils/sendEmail';
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const config = require('../config/config');
+const prisma = require('../config/db');
+const Joi = require('joi');
+const { generateRandomToken } = require('../utils/tokenUtils');
+const sendEmail = require('../utils/sendEmail');
+
 
 const authService = {
   async register(userData) {
@@ -105,4 +106,4 @@ const authService = {
   },
 };
 
-export default authService;
+module.exports = authService;

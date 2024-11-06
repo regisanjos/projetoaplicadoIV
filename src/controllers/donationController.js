@@ -1,7 +1,9 @@
-import { body, param, validationResult } from 'express-validator';
-import donationService from '../services/donationService';
+const { body, param, validationResult } = require('express-validator');
+const donationService = require('../services/donationService');
 
-// Middleware para validação de erros
+
+
+
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -11,7 +13,7 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 const donationController = {
-  // Função para definir as validações
+  
   validate(method) {
     switch (method) {
       case 'createDonation': {
@@ -123,4 +125,4 @@ const donationController = {
   },
 };
 
-export default donationController;
+module.exports = donationController;

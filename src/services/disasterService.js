@@ -1,5 +1,7 @@
-import prisma from '../config/db';
-import Joi from 'joi';
+const prisma = require('../config/db');
+const Joi = require('joi');
+
+
 
 const disasterService = {
  
@@ -88,4 +90,4 @@ const disasterService = {
   },
 };
 
-export default disasterService;
+module.exports = disasterService;

@@ -1,4 +1,5 @@
-import itemService from '../services/itemService';
+const itemService = require('../services/itemService');
+
 
 const itemController = {
 
@@ -64,4 +65,4 @@ const itemController = {
   },
 };
 
-export default itemController;
+module.exports =  itemController;

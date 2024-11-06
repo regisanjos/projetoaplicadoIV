@@ -1,5 +1,6 @@
-import prisma from '../config/db';
-import Joi from 'joi';
+const prisma = require('../config/db');
+const Joi = require('joi');
+
 
 const itemService = {
   
@@ -82,4 +83,4 @@ const itemService = {
   },
 };
 
-export default itemService;
+module.exports = itemService;

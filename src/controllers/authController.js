@@ -1,4 +1,4 @@
-import authService from "../services/authService";
+const authService = require("../services/authService");
 
 const validateRequestBody = (fields, req, res) => {
   for (const field of fields) {
@@ -59,4 +59,4 @@ const authController = {
   },
 };
 
-export default authController;
+module.exports = authController;

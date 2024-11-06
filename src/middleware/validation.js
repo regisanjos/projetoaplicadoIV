@@ -1,4 +1,4 @@
-import { query, validationResult } from 'express-validator';
+const { query, validationResult } = require('express-validator');
 
 export const validateFilterOptions = [
   query('status')
@@ -19,3 +19,5 @@ export const validateFilterOptions = [
     next();
   }
 ];
+
+module.exports = validation.js;

@@ -1,6 +1,8 @@
-import app from './app';
-import config from './backend/src/config/config';
-import { PrismaClient } from '@prisma/client';
+const app = require('./app');
+const config = require('./backend/src/config/config'); // Certifique-se de que o caminho esteja correto
+const { PrismaClient } = require('@prisma/client');
+
+
 
 const prisma = new PrismaClient();
 

@@ -1,4 +1,5 @@
-import sharp from 'sharp';
+const sharp = require('sharp');
+
 
 export const resizeImage = async (imagePath, width, height) => {
   try {
@@ -10,3 +11,6 @@ export const resizeImage = async (imagePath, width, height) => {
     throw new Error('Erro ao processar imagem');
   }
 };
+
+module.exports = imageUtil;
+

@@ -1,6 +1,8 @@
-import { Router } from "express";
-import disasterController from '../controllers/disasterController';
-import authMiddleware from '../middleware/authMiddleware';
+
+const { Router } = require("express");
+const disasterController = require("../controllers/disasterController");
+const authMiddleware = require("../middleware/authMiddleware");
+
 
 const router = Router();
 
@@ -11,4 +13,4 @@ router.get('/disasters/:id', authMiddleware, disasterController.getDisasterById)
 router.put('/disasters/:id', authMiddleware, disasterController.updateDisaster);
 router.delete('/disasters/:id', authMiddleware, disasterController.deleteDisaster);
 
-export default router;
+module.exports = router;

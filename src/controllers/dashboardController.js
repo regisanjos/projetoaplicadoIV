@@ -1,5 +1,6 @@
-import dashboardService from '../services/dashboardService';
-import { validateFilterOptions } from '../middlewares/validation';
+const dashboardService = require('../services/dashboardService');
+const { validateFilterOptions } = require('../middlewares/validation');
+
 
 const dashboardController = {
   
@@ -25,4 +26,4 @@ const dashboardController = {
   },
 };
 
-export default dashboardController;
+module.exports = dashboardController;
