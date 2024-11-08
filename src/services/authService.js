@@ -6,11 +6,13 @@ const Joi = require('joi');
 const { generateRandomToken } = require('../utils/tokenUtils');
 const sendEmail = require('../utils/sendEmail');
 
-
-
 const authService = {
   async register(userData) {
+    // Validação com Joi para incluir o campo "name"
     const schema = Joi.object({
+      name: Joi.string().required().messages({
+        'string.empty': 'Nome é obrigatório',
+      }),
       email: Joi.string().email().required().messages({
         'string.empty': 'Email é obrigatório',
         'string.email': 'Email inválido',
@@ -26,25 +28,28 @@ const authService = {
       throw new Error(error.details[0].message);
     }
 
-    
+    // Verifica se o email já está em uso
     const existingUser = await prisma.user.findUnique({ where: { email: userData.email } });
     if (existingUser) {
       throw new Error('Este email já está em uso.');
     }
 
+    // Criptografa a senha e cria o usuário
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
 
     const user = await prisma.user.create({
       data: {
-        ...userData,
+        name: userData.name, // Inclui o nome do usuário no banco de dados
+        email: userData.email,
         password: hashedPassword,
+        role: userData.role || 'USER',
       },
     });
 
-    
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    // Remove a senha do objeto de retorno
+    const { password, resetPasswordToken, resetPasswordTokenExpiry, ...userWithoutSensitiveData } = user;
+    return userWithoutSensitiveData;
   },
 
   async login(email, password) {
@@ -53,13 +58,14 @@ const authService = {
       throw new Error('Credenciais inválidas');
     }
 
+    // Verifica a senha
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       throw new Error('Credenciais inválidas');
     }
 
+    // Gera o token JWT
     const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: config.jwtExpiration || '1h' });
-
     return token;
   },
 
@@ -102,7 +108,11 @@ const authService = {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: hashedPassword, resetPasswordToken: null, resetPasswordTokenExpiry: null },
+      data: {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordTokenExpiry: null,
+      },
     });
   },
 };

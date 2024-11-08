@@ -41,7 +41,7 @@ model User {
   name          String
   email         String         @unique
   password      String
-  role          Role
+  role          String  @default("USER")
   street        String?
   city          String?
   state         String?

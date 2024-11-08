@@ -2,10 +2,7 @@ const { Router } = require("express");
 const donationController = require("../controllers/donationController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
-
-
 const router = Router();
-
 
 router.get('/donations', donationController.getAll);
 router.post('/donations', authMiddleware, donationController.create);

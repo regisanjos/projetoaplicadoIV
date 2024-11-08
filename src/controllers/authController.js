@@ -11,46 +11,49 @@ const validateRequestBody = (fields, req, res) => {
 
 const authController = {
   register: async (req, res) => {
-    try {
-      const validationError = validateRequestBody(['email', 'password'], req, res);
-      if (validationError) return validationError;
+    const validationError = validateRequestBody(['email', 'password'], req, res);
+    if (validationError) return validationError;
 
+    try {
       const user = await authService.register(req.body);
-      res.status(201).json(user);
+      res.status(201).json({
+        message: 'Usuário registrado com sucesso',
+        user
+      });
     } catch (error) {
       res.status(error.statusCode || 500).json({ error: error.message });
     }
   },
 
   login: async (req, res) => {
-    try {
-      const validationError = validateRequestBody(['email', 'password'], req, res);
-      if (validationError) return validationError;
+    const validationError = validateRequestBody(['email', 'password'], req, res);
+    if (validationError) return validationError;
 
+    try {
       const token = await authService.login(req.body.email, req.body.password);
-      res.json({ token });
+      res.json({ message: 'Login realizado com sucesso', token });
     } catch (error) {
       res.status(error.statusCode || 500).json({ error: error.message });
     }
   },
 
   forgotPassword: async (req, res) => {
-    try {
-      const validationError = validateRequestBody(['email'], req, res);
-      if (validationError) return validationError;
+    const validationError = validateRequestBody(['email'], req, res);
+    if (validationError) return validationError;
 
+    try {
       await authService.forgotPassword(req.body.email);
-      res.json({ message: 'Email de recuperação de senha enviado' });
+      res.json({ message: 'Email de recuperação de senha enviado com sucesso' });
     } catch (error) {
       res.status(error.statusCode || 500).json({ error: error.message });
     }
   },
 
   resetPassword: async (req, res) => {
-    try {
-      const validationError = validateRequestBody(['token', 'newPassword'], req, res);
-      if (validationError) return validationError;
+    const validationError = validateRequestBody(['token', 'newPassword'], req, res);
+    if (validationError) return validationError;
 
+    try {
       await authService.resetPassword(req.body.token, req.body.newPassword);
       res.json({ message: 'Senha redefinida com sucesso' });
     } catch (error) {

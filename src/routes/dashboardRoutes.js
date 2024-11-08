@@ -3,10 +3,6 @@ const dashboardController = require("../controllers/dashboardController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const { validateFilterOptions } = require("../middlewares/validation");
 
-
-
-
-
 const router = Router();
 
 router.get('/overview', authMiddleware, dashboardController.getOverview);

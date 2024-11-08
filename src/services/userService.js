@@ -47,7 +47,7 @@ const userService = {
     const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
 
     const user = await prisma.user.create({
-      data: { ...userData, password: hashedPassword },
+      data: { ...userData, password: hashedPassword, name: userData.name },
     });
 
     return this.sanitizeUser(user);
