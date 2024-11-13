@@ -41,7 +41,7 @@ model User {
   name          String
   email         String         @unique
   password      String
-  role          String  @default("USER")
+  role          Role         @default(USER)
   street        String?
   city          String?
   state         String?
@@ -98,10 +98,20 @@ model Donation {
   updatedAt         DateTime       @updatedAt
 }
 
+model DonationExit {
+  id          String   @id @default(uuid())
+  itemName    String
+  quantity    Int
+  recipient   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
 model DonationItem {
   donationId Int
   itemId     Int
-  quanty     Int
+  quantity   Int
   donation   Donation @relation(fields: [donationId], references: [id])
   item       Item     @relation(fields: [itemId], references: [id])
 

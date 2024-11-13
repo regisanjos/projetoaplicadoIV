@@ -3,8 +3,23 @@ const loggerMiddleware = (req, res, next) => {
 
   res.on('finish', () => {
     const duration = Date.now() - start;
+
+    const logDetails = {
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      url: req.url,
+      status: res.statusCode,
+      duration: `${duration}ms`,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    };
+
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} ${res.statusCode} ${duration}ms - IP: ${req.ip} - User-Agent: ${req.headers['user-agent']}`);
+      // Logs detalhados em desenvolvimento
+      console.log(JSON.stringify(logDetails, null, 2));
+    } else {
+      // Logs simplificados em produção
+      console.log(`[${logDetails.timestamp}] ${logDetails.method} ${logDetails.url} ${logDetails.status} ${logDetails.duration}`);
     }
   });
 

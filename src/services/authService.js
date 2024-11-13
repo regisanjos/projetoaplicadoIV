@@ -6,84 +6,75 @@ const Joi = require('joi');
 const { generateRandomToken } = require('../utils/tokenUtils');
 const sendEmail = require('../utils/sendEmail');
 
+const errorMessages = {
+  userExists: 'Este email já está em uso.',
+  invalidCredentials: 'Credenciais inválidas.',
+  userNotFound: 'Usuário não encontrado.',
+  invalidResetToken: 'Token de redefinição de senha inválido ou expirado.',
+};
+
+const hashPassword = async (password) => {
+  const saltRounds = 10;
+  return await bcrypt.hash(password, saltRounds);
+};
+
 const authService = {
   async register(userData) {
-    // Validação com Joi para incluir o campo "name"
     const schema = Joi.object({
-      name: Joi.string().required().messages({
-        'string.empty': 'Nome é obrigatório',
-      }),
-      email: Joi.string().email().required().messages({
-        'string.empty': 'Email é obrigatório',
-        'string.email': 'Email inválido',
-      }),
-      password: Joi.string().min(6).required().messages({
-        'string.empty': 'Senha é obrigatória',
-        'string.min': 'A senha deve ter pelo menos 6 caracteres',
-      }),
+      name: Joi.string().required().messages({ 'string.empty': 'Nome é obrigatório' }),
+      email: Joi.string().email().required().messages({ 'string.empty': 'Email é obrigatório', 'string.email': 'Email inválido' }),
+      password: Joi.string().min(6).required().messages({ 'string.empty': 'Senha é obrigatória', 'string.min': 'A senha deve ter pelo menos 6 caracteres' }),
     });
 
     const { error } = schema.validate(userData);
-    if (error) {
-      throw new Error(error.details[0].message);
-    }
+    if (error) throw new Error(error.details[0].message);
 
-    // Verifica se o email já está em uso
     const existingUser = await prisma.user.findUnique({ where: { email: userData.email } });
-    if (existingUser) {
-      throw new Error('Este email já está em uso.');
-    }
+    if (existingUser) throw new Error(errorMessages.userExists);
 
-    // Criptografa a senha e cria o usuário
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+    const hashedPassword = await hashPassword(userData.password);
 
     const user = await prisma.user.create({
       data: {
-        name: userData.name, // Inclui o nome do usuário no banco de dados
+        name: userData.name,
         email: userData.email,
         password: hashedPassword,
         role: userData.role || 'USER',
       },
     });
 
-    // Remove a senha do objeto de retorno
     const { password, resetPasswordToken, resetPasswordTokenExpiry, ...userWithoutSensitiveData } = user;
     return userWithoutSensitiveData;
   },
 
   async login(email, password) {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      throw new Error('Credenciais inválidas');
-    }
+    if (!user) throw new Error(errorMessages.invalidCredentials);
 
-    // Verifica a senha
     const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      throw new Error('Credenciais inválidas');
-    }
+    if (!passwordMatch) throw new Error(errorMessages.invalidCredentials);
 
-    // Gera o token JWT
-    const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: config.jwtExpiration || '1h' });
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      config.jwtSecret,
+      { expiresIn: config.jwtExpiration || '1h' }
+    );
     return token;
   },
 
   async forgotPassword(email) {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      throw new Error('Usuário não encontrado');
-    }
+    if (!user) throw new Error(errorMessages.userNotFound);
 
     const resetPasswordToken = generateRandomToken();
-    const resetPasswordTokenExpiry = new Date(Date.now() + 3600000); // 1 hora para expirar
+    const resetPasswordTokenExpiry = new Date(Date.now() + 3600000); // 1 hora
 
     await prisma.user.update({
       where: { id: user.id },
       data: { resetPasswordToken, resetPasswordTokenExpiry },
     });
 
-    const resetPasswordLink = `http://seusite.com/redefinir-senha?token=${resetPasswordToken}`;
+    const resetPasswordLink = `${process.env.FRONTEND_URL}/redefinir-senha?token=${resetPasswordToken}`;
     await sendEmail(email, 'Recuperação de senha', `Clique no link para redefinir sua senha: ${resetPasswordLink}`);
   },
 
@@ -94,17 +85,14 @@ const authService = {
     });
 
     const { error } = passwordSchema.validate(newPassword);
-    if (error) {
-      throw new Error(error.details[0].message);
-    }
+    if (error) throw new Error(error.details[0].message);
 
     const user = await prisma.user.findUnique({ where: { resetPasswordToken: token } });
     if (!user || user.resetPasswordTokenExpiry < new Date()) {
-      throw new Error('Token de redefinição de senha inválido ou expirado');
+      throw new Error(errorMessages.invalidResetToken);
     }
 
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    const hashedPassword = await hashPassword(newPassword);
 
     await prisma.user.update({
       where: { id: user.id },

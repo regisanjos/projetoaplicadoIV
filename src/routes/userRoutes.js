@@ -1,14 +1,41 @@
 const { Router } = require('express');
+const { body, param, validationResult } = require('express-validator');
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const adminMiddleware = require('../middlewares/adminMiddleware');
 
 const router = Router();
 
-router.post('/users', userController.create);
-router.use(authMiddleware);// Aplica authMiddleware a todas as rotas abaixo
-router.get('/users', userController.getAll);
-router.get('/users/:id', userController.getById);
-router.put('/users/:id', userController.update);
-router.delete('/users/:id', userController.delete);
+// Middleware para validar erros de validação
+const validateRequest = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  next();
+};
+
+// Validações
+const validateUserId = [
+  param('id').isUUID().withMessage('ID inválido'),
+  validateRequest,
+];
+
+const validateUserCreation = [
+  body('name').notEmpty().withMessage('Nome obrigatório'),
+  body('email').isEmail().withMessage('Email inválido'),
+  body('password').isLength({ min: 6 }).withMessage('Senha curta'),
+  validateRequest,
+];
+
+// Rotas de usuários
+router.post('/users', validateUserCreation, userController.create);
+
+router.use(authMiddleware); // Middleware de autenticação
+
+router.get('/users', adminMiddleware, userController.getAll);
+router.get('/users/:id', validateUserId, userController.getById);
+router.put('/users/:id', validateUserId, userController.update);
+router.delete('/users/:id', adminMiddleware, validateUserId, userController.delete);
 
 module.exports = router;

@@ -1,93 +1,101 @@
 const prisma = require('../config/db');
 const bcrypt = require('bcryptjs');
 const Joi = require('joi');
+const AppError = require('../utils/AppError');
+
+const errorMessages = {
+  emailInUse: 'Este email já está em uso.',
+  accessDenied: 'Acesso negado.',
+  userNotFound: 'Usuário não encontrado.',
+  userUpdateError: 'Usuário não encontrado para atualização.',
+  userDeleteError: 'Usuário não encontrado para deleção.',
+};
+
+const userSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    'string.empty': 'O email é obrigatório',
+    'string.email': 'Formato de email inválido',
+  }),
+  password: Joi.string().min(6).optional().messages({
+    'string.min': 'A senha deve ter pelo menos 6 caracteres',
+  }),
+  name: Joi.string().max(50).required().messages({
+    'string.empty': 'O nome é obrigatório',
+    'string.max': 'O nome deve ter no máximo 50 caracteres',
+  }),
+});
+
+const validateUserData = (userData) => {
+  const { error } = userSchema.validate(userData, { abortEarly: false });
+  if (error) {
+    throw new AppError(
+      error.details.map((detail) => detail.message).join(', '),
+      400
+    );
+  }
+};
+
+const sanitizeUser = (user) => {
+  const { password, ...sanitizedUser } = user;
+  return sanitizedUser;
+};
 
 const userService = {
-  
-  validateUserData(userData) {
-    const schema = Joi.object({
-      email: Joi.string().email().required().messages({
-        'string.empty': 'O email é obrigatório',
-        'string.email': 'Formato de email inválido',
-      }),
-      password: Joi.string().min(6).optional().messages({
-        'string.min': 'A senha deve ter pelo menos 6 caracteres',
-      }),
-      name: Joi.string().required().messages({
-        'string.empty': 'O nome é obrigatório',
-      }),
-    });
-
-    const { error } = schema.validate(userData);
-    if (error) {
-      throw new Error(error.details[0].message);
-    }
-  },
-
-  
-  sanitizeUser(user) {
-    const { password, ...sanitizedUser } = user;
-    return sanitizedUser;
-  },
-
-  
   async createUser(userData) {
-    this.validateUserData(userData);
+    validateUserData(userData);
 
-    
-    const existingUser = await prisma.user.findUnique({
-      where: { email: userData.email },
-    });
+    const existingUser = await prisma.user.findUnique({ where: { email: userData.email } });
     if (existingUser) {
-      throw new Error('Este email já está em uso.');
+      throw new AppError(errorMessages.emailInUse, 409);
     }
 
-    
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
 
     const user = await prisma.user.create({
-      data: { ...userData, password: hashedPassword, name: userData.name },
+      data: { ...userData, password: hashedPassword },
     });
 
-    return this.sanitizeUser(user);
+    return { success: true, data: sanitizeUser(user) };
   },
 
-  
-  async getAllUsers(adminId) {
+  async getAllUsers(adminId, page = 1, limit = 10) {
     if (!(await this.isAdmin(adminId))) {
-      throw new Error('Acesso negado: apenas administradores podem visualizar todos os usuários.');
+      console.warn(`Acesso negado ao usuário ${adminId}`);
+      throw new AppError(errorMessages.accessDenied, 403);
     }
 
-    const users = await prisma.user.findMany();
-    return users.map(this.sanitizeUser);
+    const users = await prisma.user.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      success: true,
+      data: users.map(sanitizeUser),
+      meta: { page, limit },
+    };
   },
 
-  
   async getUserById(userId) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
-      throw new Error('Usuário não encontrado');
+      throw new AppError(errorMessages.userNotFound, 404);
     }
 
-    return this.sanitizeUser(user);
+    return { success: true, data: sanitizeUser(user) };
   },
 
-  
   async updateUser(userId, userData, requesterId) {
     if (userId !== requesterId && !(await this.isAdmin(requesterId))) {
-      throw new Error('Acesso negado: você não tem permissão para atualizar este usuário.');
+      console.warn(`Acesso negado ao usuário ${requesterId} para atualizar ${userId}`);
+      throw new AppError(errorMessages.accessDenied, 403);
     }
 
-    this.validateUserData(userData);
+    validateUserData(userData);
 
-    
     if (userData.password) {
-      const saltRounds = 10;
-      userData.password = await bcrypt.hash(userData.password, saltRounds);
+      userData.password = await bcrypt.hash(userData.password, 10);
     }
 
     try {
@@ -95,41 +103,39 @@ const userService = {
         where: { id: userId },
         data: userData,
       });
-      return this.sanitizeUser(updatedUser);
+      return { success: true, data: sanitizeUser(updatedUser) };
     } catch (error) {
       if (error.code === 'P2025') {
-        throw new Error('Usuário não encontrado para atualização');
+        throw new AppError(errorMessages.userUpdateError, 404);
       }
       throw error;
     }
   },
 
-  
   async deleteUser(userId, adminId) {
     if (!(await this.isAdmin(adminId))) {
-      throw new Error('Acesso negado: apenas administradores podem deletar usuários.');
+      console.warn(`Acesso negado ao usuário ${adminId} para deletar ${userId}`);
+      throw new AppError(errorMessages.accessDenied, 403);
     }
 
     try {
-      await prisma.user.delete({
-        where: { id: userId },
-      });
+      await prisma.user.delete({ where: { id: userId } });
+      return { success: true, message: 'Usuário deletado com sucesso.' };
     } catch (error) {
       if (error.code === 'P2025') {
-        throw new Error('Usuário não encontrado para deleção');
+        throw new AppError(errorMessages.userDeleteError, 404);
       }
       throw error;
     }
   },
 
-  
   async getTotalUsers() {
-    return await prisma.user.count();
+    const count = await prisma.user.count();
+    return { success: true, data: count };
   },
 
-  
   async isAdmin(userId) {
-    const user = await this.getUserById(userId);
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     return user && user.role === 'ADMIN';
   },
 };

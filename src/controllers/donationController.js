@@ -1,9 +1,6 @@
 const { body, param, validationResult } = require('express-validator');
 const donationService = require('../services/donationService');
 
-
-
-
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -12,8 +9,14 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
+const handleError = (res, error, customMessage = 'Erro interno no servidor') => {
+  const statusCode = error.statusCode || 500;
+  const message = error.message || customMessage;
+  console.error(message, error); // Log para depuração
+  res.status(statusCode).json({ error: message });
+};
+
 const donationController = {
-  
   validate(method) {
     switch (method) {
       case 'createDonation': {
@@ -26,13 +29,11 @@ const donationController = {
           body('items').isArray().withMessage('Os itens devem ser um array'),
           body('items.*.id').isInt().withMessage('O ID do item deve ser um número inteiro'),
           body('items.*.quantity').isInt({ min: 1 }).withMessage('A quantidade deve ser um número inteiro maior que zero'),
-          handleValidationErrors,
         ];
       }
       case 'getDonationById': {
         return [
           param('id').isInt().withMessage('O ID deve ser um número inteiro'),
-          handleValidationErrors,
         ];
       }
       case 'updateDonation': {
@@ -46,13 +47,11 @@ const donationController = {
           body('items').optional().isArray().withMessage('Os itens devem ser um array'),
           body('items.*.id').optional().isInt().withMessage('O ID do item deve ser um número inteiro'),
           body('items.*.quantity').optional().isInt({ min: 1 }).withMessage('A quantidade deve ser um número inteiro maior que zero'),
-          handleValidationErrors,
         ];
       }
       case 'deleteDonation': {
         return [
           param('id').isInt().withMessage('O ID deve ser um número inteiro'),
-          handleValidationErrors,
         ];
       }
       default:
@@ -60,67 +59,92 @@ const donationController = {
     }
   },
 
-  // Criar uma nova doação
   async create(req, res) {
     try {
       const donation = await donationService.createDonation(req.body);
-      res.status(201).json(donation);
+      res.status(201).json({
+        success: true,
+        data: donation,
+      });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      handleError(res, error, 'Erro ao criar a doação');
     }
   },
 
-  // Buscar todas as doações
   async getAll(req, res) {
     try {
       const donations = await donationService.getAllDonations();
-      res.json(donations);
+      res.status(200).json({
+        success: true,
+        data: donations,
+      });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      handleError(res, error, 'Erro ao buscar todas as doações');
     }
   },
 
-  // Buscar uma doação pelo ID
   async getById(req, res) {
     try {
       const donationId = parseInt(req.params.id);
+      if (isNaN(donationId)) {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
+
       const donation = await donationService.getDonationById(donationId);
-      res.json(donation);
+      if (!donation) {
+        return res.status(404).json({ error: 'Doação não encontrada' });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: donation,
+      });
     } catch (error) {
-      res.status(error.statusCode || 404).json({ error: error.message });
+      handleError(res, error, 'Erro ao buscar a doação');
     }
   },
 
-  // Atualizar uma doação
   async update(req, res) {
     try {
       const donationId = parseInt(req.params.id);
+      if (isNaN(donationId)) {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
+
       const updatedDonation = await donationService.updateDonation(donationId, req.body);
-      res.json(updatedDonation);
+      res.status(200).json({
+        success: true,
+        data: updatedDonation,
+      });
     } catch (error) {
-      res.status(error.statusCode || 500).json({ error: error.message });
+      handleError(res, error, 'Erro ao atualizar a doação');
     }
   },
 
-  // Deletar uma doação
   async delete(req, res) {
     try {
       const donationId = parseInt(req.params.id);
+      if (isNaN(donationId)) {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
+
       await donationService.deleteDonation(donationId);
       res.status(204).send();
     } catch (error) {
-      res.status(error.statusCode || 500).json({ error: error.message });
+      handleError(res, error, 'Erro ao deletar a doação');
     }
   },
 
-  // Buscar doações recentes com limite opcional
   async getRecentDonations(req, res) {
     try {
       const limit = parseInt(req.query.limit) || 5;
       const recentDonations = await donationService.getRecentDonations(limit);
-      res.json(recentDonations);
+      res.status(200).json({
+        success: true,
+        data: recentDonations,
+      });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      handleError(res, error, 'Erro ao buscar doações recentes');
     }
   },
 };

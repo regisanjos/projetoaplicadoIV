@@ -1,20 +1,16 @@
 const { Router } = require('express');
-const notificationService = require('../services/notificationService');
+const notificationController = require('../controllers/notificationController');
 const authMiddleware = require('../middlewares/authMiddleware');
-
-
-
 
 const router = Router();
 
-router.get('/notifications', authMiddleware, async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const notifications = await notificationService.getUserNotifications(userId);
-    res.json(notifications);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Rota para obter notificações do usuário
+router.get('/notifications', authMiddleware, notificationController.getUserNotifications);
+
+// Rota para marcar uma notificação como lida
+router.put('/notifications/:id/read', authMiddleware, notificationController.markAsRead);
+
+// Rota para deletar uma notificação
+router.delete('/notifications/:id', authMiddleware, notificationController.deleteNotification);
 
 module.exports = router;

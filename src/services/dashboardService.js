@@ -4,42 +4,56 @@ const donationService = require('./donationService');
 const disasterService = require('./disasterService');
 
 const dashboardService = {
-  
   async getOverviewData() {
     try {
-      const totalUsers = await userService.getTotalUsers();
-      const totalDonations = await donationService.getTotalDonations();
-      const totalActiveDisasters = await disasterService.getTotalActiveDisasters();
-      const recentUsers = await userService.getRecentUsers();
-      const recentDisasters = await disasterService.getRecentDisasters();
+      const [totalUsers, totalDonations, totalActiveDisasters, recentUsers, recentDisasters] = await Promise.all([
+        userService.getTotalUsers(),
+        donationService.getTotalDonations(),
+        disasterService.getTotalActiveDisasters(),
+        userService.getRecentUsers(),
+        disasterService.getRecentDisasters(),
+      ]);
 
       return {
-        totalUsers,
-        totalDonations,
-        totalActiveDisasters,
-        recentUsers,
-        recentDisasters,
+        success: true,
+        data: {
+          totalUsers,
+          totalDonations,
+          totalActiveDisasters,
+          recentUsers,
+          recentDisasters,
+        },
       };
     } catch (error) {
-      throw new Error(`Erro ao obter dados de visão geral: ${error.message}`);
+      console.error('Erro ao obter dados de visão geral:', error.message);
+      throw new Error('Erro ao obter dados de visão geral.');
     }
   },
 
-  
   async getChartData(chartType, filterOptions) {
     try {
       switch (chartType) {
         case 'donationsByDisaster':
-          return await this.getDonationsByDisaster(filterOptions);
+          return {
+            success: true,
+            data: await this.getDonationsByDisaster(filterOptions),
+          };
         case 'donationsOverTime':
-          return await this.getDonationsOverTime(filterOptions);
+          return {
+            success: true,
+            data: await this.getDonationsOverTime(filterOptions),
+          };
         case 'donationsByStatus':
-          return await donationService.getDonationsByStatus();
+          return {
+            success: true,
+            data: await donationService.getDonationsByStatus(),
+          };
         default:
-          throw new Error('Tipo de gráfico inválido');
+          throw new Error('Tipo de gráfico inválido.');
       }
     } catch (error) {
-      throw new Error(`Erro ao obter dados do gráfico: ${error.message}`);
+      console.error('Erro ao obter dados do gráfico:', error.message);
+      throw new Error('Erro ao obter dados do gráfico.');
     }
   },
 
@@ -47,26 +61,30 @@ const dashboardService = {
     try {
       const { startDate, endDate, disasterIds } = filterOptions;
 
+      const whereConditions = {
+        ...(startDate && endDate && {
+          createdAt: { gte: new Date(startDate), lte: new Date(endDate) },
+        }),
+        ...(disasterIds && {
+          disasterId: { in: disasterIds.map((id) => parseInt(id)) },
+        }),
+      };
+
       const donationsByDisaster = await prisma.donation.groupBy({
         by: ['disasterId'],
         _count: {
           id: true,
         },
-        where: {
-          ...(startDate && endDate ? { createdAt: { gte: new Date(startDate), lte: new Date(endDate) } } : {}),
-          ...(disasterIds ? { disasterId: { in: disasterIds.map(id => parseInt(id)) } } : {}),
-        },
+        where: whereConditions,
       });
 
-     
       const disasterNames = await prisma.disaster.findMany({
-        where: { id: { in: donationsByDisaster.map(item => item.disasterId) } },
+        where: { id: { in: donationsByDisaster.map((item) => item.disasterId) } },
         select: { id: true, name: true },
       });
 
-      
-      const chartData = donationsByDisaster.map(item => {
-        const disaster = disasterNames.find(d => d.id === item.disasterId);
+      const chartData = donationsByDisaster.map((item) => {
+        const disaster = disasterNames.find((d) => d.id === item.disasterId);
         return {
           disasterName: disaster ? disaster.name : 'Desconhecido',
           totalDonations: item._count.id,
@@ -75,7 +93,8 @@ const dashboardService = {
 
       return chartData;
     } catch (error) {
-      throw new Error(`Erro ao agrupar doações por desastre: ${error.message}`);
+      console.error('Erro ao agrupar doações por desastre:', error.message);
+      throw new Error('Erro ao agrupar doações por desastre.');
     }
   },
 
@@ -89,18 +108,21 @@ const dashboardService = {
           id: true,
         },
         where: {
-          ...(startDate && endDate ? { createdAt: { gte: new Date(startDate), lte: new Date(endDate) } } : {}),
+          ...(startDate && endDate && {
+            createdAt: { gte: new Date(startDate), lte: new Date(endDate) },
+          }),
         },
       });
 
-      const chartData = donationsOverTime.map(item => ({
-        date: item.createdAt,
+      const chartData = donationsOverTime.map((item) => ({
+        date: item.createdAt.toISOString().split('T')[0], // Retorna apenas a data
         totalDonations: item._count.id,
       }));
 
       return chartData;
     } catch (error) {
-      throw new Error(`Erro ao agrupar doações ao longo do tempo: ${error.message}`);
+      console.error('Erro ao agrupar doações ao longo do tempo:', error.message);
+      throw new Error('Erro ao agrupar doações ao longo do tempo.');
     }
   },
 };
