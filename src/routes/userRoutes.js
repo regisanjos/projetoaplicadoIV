@@ -1,3 +1,4 @@
+// Arquivo userRoutes.js
 const { Router } = require('express');
 const { body, param, validationResult } = require('express-validator');
 const userController = require('../controllers/userController');
@@ -29,13 +30,13 @@ const validateUserCreation = [
 ];
 
 // Rotas de usuários
-router.post('/users', validateUserCreation, userController.create);
+router.post('/', validateUserCreation, userController.create); // Corrigido aqui
 
 router.use(authMiddleware); // Middleware de autenticação
 
-router.get('/users', adminMiddleware, userController.getAll);
-router.get('/users/:id', validateUserId, userController.getById);
-router.put('/users/:id', validateUserId, userController.update);
-router.delete('/users/:id', adminMiddleware, validateUserId, userController.delete);
+router.get('/', adminMiddleware, userController.getAll);
+router.get('/:id', validateUserId, userController.getById);
+router.put('/:id', validateUserId, userController.update);
+router.delete('/:id', adminMiddleware, validateUserId, userController.delete);
 
 module.exports = router;
