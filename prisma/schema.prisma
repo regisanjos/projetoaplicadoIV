@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -16,6 +13,7 @@ datasource db {
 enum Role {
   USER
   ADMIN
+  PONTO_DE_COLETA
 }
 
 enum DonationStatus {
@@ -37,37 +35,51 @@ enum DisasterStatus {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  name          String
-  email         String         @unique
-  password      String
-  role          Role         @default(USER)
-  street        String?
-  city          String?
-  state         String?
-  zipCode       String?
-  country       String?
-  bankName      String?
-  accountNumber String?
-  routingNumber String?
-  pixKey        String?
-  paypalEmail   String?
-  Donations     Donation[]
-  notifications Notification[]
-  createdAt     DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id              Int              @id @default(autoincrement())
+  name            String
+  email           String           @unique
+  password        String
+  role            Role             @default(USER)
+  street          String?
+  city            String?
+  state           String?
+  zipCode         String?
+  country         String?
+  bankName        String?
+  accountNumber   String?
+  routingNumber   String?
+  pixKey          String?
+  paypalEmail     String?
+  donations       Donation[]
+  notifications   Notification[]
+  collectionPoint CollectionPoint? @relation("AdminPoint")
+  collectionPointId Int?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Disaster {
-  id           Int            @id @default(autoincrement())
-  name         String
-  location     String
-  startDate    DateTime
-  endDate      DateTime?
-  status       DisasterStatus @default(ACTIVE)
+  id          Int            @id @default(autoincrement())
+  name        String
+  location    String
+  startDate   DateTime
+  endDate     DateTime?
+  status      DisasterStatus @default(ACTIVE)
   discription String?
-  imageUrl     String?
-  donation     Donation[]
+  imageUrl    String?
+  donation    Donation[]
+}
+
+model CollectionPoint {
+  id        Int        @id @default(autoincrement())
+  name      String
+  bairro    String
+  location  String
+  adminId   Int        @unique
+  admin     User       @relation("AdminPoint", fields: [adminId], references: [id])
+  donations Donation[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Item {
@@ -79,34 +91,33 @@ model Item {
 }
 
 model Donation {
-  id               Int            @id @default(autoincrement())
-  type             String
-  description      String
-  status           DonationStatus @default(PENDING)
-  //amount           Decimal?       @db.Decimal(10, 2)
-  //currency         String?
-  recurring        Boolean
-  frequency        String?
-  nextDonationDate DateTime?
-  userId           Int
-  user             User           @relation(fields: [userId], references: [id])
-  disasterId       Int
-  disaster         Disaster       @relation(fields: [disasterId], references: [id])
-  donationItems    DonationItem[]
-  eta              ETA?
-  createdAt        DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  id                Int              @id @default(autoincrement())
+  type              String
+  description       String
+  status            DonationStatus   @default(PENDING)
+  recurring         Boolean
+  frequency         String?
+  nextDonationDate  DateTime?
+  userId            Int
+  user              User             @relation(fields: [userId], references: [id])
+  disasterId        Int
+  disaster          Disaster         @relation(fields: [disasterId], references: [id])
+  collectionPointId Int?
+  collectionPoint   CollectionPoint? @relation(fields: [collectionPointId], references: [id])
+  donationItems     DonationItem[]
+  eta               ETA?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 }
 
 model DonationExit {
-  id          String   @id @default(uuid())
-  itemName    String
-  quantity    Int
-  recipient   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  itemName  String
+  quantity  Int
+  recipient String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
-
 
 model DonationItem {
   donationId Int
@@ -137,7 +148,7 @@ model ETA {
   currentLocation  String
   status           String?
   transporter      String?
-  trackingNumber    String?
+  trackingNumber   String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }

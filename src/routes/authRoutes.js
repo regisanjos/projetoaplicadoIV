@@ -1,19 +1,19 @@
-const { Router } = require("express");
-const { body } = require("express-validator");
-const authController = require("../controllers/authController");
-const validateRequest = require("../middlewares/validateRequest");
-const rateLimit = require("express-rate-limit");
+const { Router } = require('express');
+const { body } = require('express-validator');
+const authController = require('../controllers/authController');
+const validateRequest = require('../middlewares/validateRequest');
+const rateLimit = require('express-rate-limit');
 
 const router = Router();
 
-// Middleware de limitação de taxa para login e redefinição de senha
+// Middleware de limitação de taxa
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 10, // Máximo de 10 requisições por IP
   message: "Muitas tentativas de login. Tente novamente mais tarde.",
 });
 
-// Rotas de autenticação
+// Rota para registro
 router.post(
   '/register',
   [
@@ -21,9 +21,10 @@ router.post(
     body('password').isLength({ min: 6 }).withMessage('A senha deve ter pelo menos 6 caracteres'),
     validateRequest,
   ],
-  authController.register
+  authController.register // Certifique-se de que 'register' está definido
 );
 
+// Rota para login
 router.post(
   '/login',
   authRateLimiter,
@@ -32,26 +33,7 @@ router.post(
     body('password').notEmpty().withMessage('A senha é obrigatória'),
     validateRequest,
   ],
-  authController.login
-);
-
-router.post(
-  '/forgot-password',
-  [
-    body('email').isEmail().withMessage('Email inválido'),
-    validateRequest,
-  ],
-  authController.forgotPassword
-);
-
-router.post(
-  '/reset-password',
-  [
-    body('token').notEmpty().withMessage('O token é obrigatório'),
-    body('newPassword').isLength({ min: 6 }).withMessage('A nova senha deve ter pelo menos 6 caracteres'),
-    validateRequest,
-  ],
-  authController.resetPassword
+  authController.login // Certifique-se de que 'login' está definido
 );
 
 module.exports = router;

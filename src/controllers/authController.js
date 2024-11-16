@@ -1,74 +1,89 @@
-const authService = require("../services/authService");
+const authService = require('../services/authService');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const validateRequestBody = (fields, body) => {
   for (const field of fields) {
-    if (!body[field] || body[field].trim() === "") {
+    if (!body[field] || body[field].trim() === '') {
       return `${field.charAt(0).toUpperCase() + field.slice(1)} é obrigatório.`;
     }
   }
   return null;
 };
 
-const handleError = (res, error) => {
+const handleError = (res, error, customMessage) => {
   const statusCode = error.statusCode || 500;
-  const message = error.message || 'Ocorreu um erro inesperado.';
+  const message = customMessage || error.message || 'Erro interno no servidor.';
+  console.error('Erro:', message, error);
   res.status(statusCode).json({ error: message });
 };
 
 const authController = {
-  register: async (req, res) => {
-    const validationError = validateRequestBody(['email', 'password'], req.body);
-    if (validationError) return res.status(400).json({ error: validationError });
+  async register(req, res) {
+    const { name, email, password, role } = req.body;
+
+    // Validação simplificada
+    const validationError = validateRequestBody(['name', 'email', 'password', 'role'], req.body);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
+    }
 
     try {
-      const user = await authService.register(req.body);
-      const { id, email, name } = user; // Evitar retornar informações sensíveis
+      // Criação do usuário
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await authService.createUser({
+        name,
+        email,
+        password: hashedPassword,
+        role,
+      });
+
+      const { password: _, ...userWithoutPassword } = user; // Remover senha do retorno
       res.status(201).json({
-        message: 'Usuário registrado com sucesso',
-        user: { id, email, name },
+        success: true,
+        message: 'Usuário registrado com sucesso.',
+        data: userWithoutPassword,
       });
     } catch (error) {
-      console.error("Erro no registro de usuário:", error);
-      handleError(res, error);
+      if (error.code === 'P2002' && error.meta.target.includes('email')) {
+        return res.status(400).json({ error: 'Email já está em uso.' });
+      }
+      handleError(res, error, 'Erro ao registrar o usuário.');
     }
   },
 
-  login: async (req, res) => {
+  async login(req, res) {
+    const { email, password } = req.body;
+
+    // Validação
     const validationError = validateRequestBody(['email', 'password'], req.body);
-    if (validationError) return res.status(400).json({ error: validationError });
-
-    try {
-      const token = await authService.login(req.body.email, req.body.password);
-      res.json({ message: 'Login realizado com sucesso', token });
-    } catch (error) {
-      console.error("Erro no login:", error);
-      handleError(res, error);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
     }
-  },
-
-  forgotPassword: async (req, res) => {
-    const validationError = validateRequestBody(['email'], req.body);
-    if (validationError) return res.status(400).json({ error: validationError });
 
     try {
-      await authService.forgotPassword(req.body.email);
-      res.json({ message: 'Email de recuperação de senha enviado com sucesso' });
-    } catch (error) {
-      console.error("Erro no envio de email de recuperação:", error);
-      handleError(res, error);
-    }
-  },
+      const user = await authService.authenticateUser(email, password);
 
-  resetPassword: async (req, res) => {
-    const validationError = validateRequestBody(['token', 'newPassword'], req.body);
-    if (validationError) return res.status(400).json({ error: validationError });
+      // Gerar Token JWT
+      if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET não configurado nas variáveis de ambiente.');
+      }
+      const token = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
 
-    try {
-      await authService.resetPassword(req.body.token, req.body.newPassword);
-      res.json({ message: 'Senha redefinida com sucesso' });
+      res.status(200).json({
+        success: true,
+        message: 'Login realizado com sucesso.',
+        token,
+      });
     } catch (error) {
-      console.error("Erro na redefinição de senha:", error);
-      handleError(res, error);
+      if (error.message === 'Credenciais inválidas.') {
+        return res.status(401).json({ error: error.message });
+      }
+      handleError(res, error, 'Erro ao realizar login.');
     }
   },
 };
