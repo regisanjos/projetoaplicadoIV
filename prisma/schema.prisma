@@ -65,7 +65,7 @@ model Disaster {
   startDate   DateTime
   endDate     DateTime?
   status      DisasterStatus @default(ACTIVE)
-  discription String?
+  description String?
   imageUrl    String?
   donation    Donation[]
 }
