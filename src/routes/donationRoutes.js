@@ -2,56 +2,60 @@ const { Router } = require("express");
 const { body, param } = require("express-validator");
 const donationController = require("../controllers/donationController");
 const authMiddleware = require("../middlewares/authMiddleware");
+const adminOrCollectionPointMiddleware = require("../middlewares/adminOrCollectionPointMiddleware");
 
 const router = Router();
 
-// Validações
+// Validações de entrada
 const validateDonation = [
   body('userId').isInt().withMessage('O ID do usuário deve ser um número inteiro'),
   body('disasterId').isInt().withMessage('O ID do desastre deve ser um número inteiro'),
   body('type').notEmpty().withMessage('O tipo de doação é obrigatório'),
   body('description').notEmpty().withMessage('A descrição é obrigatória'),
+  body('status').optional().isIn(['PENDING', 'APPROVED', 'REJECTED']).withMessage('Status inválido'),
 ];
 
 const validateDonationId = [
   param('id').isInt().withMessage('O ID da doação deve ser um número inteiro'),
 ];
 
-// Rotas para doações
-// Obter todas as doações
-router.get('/donations', donationController.getAll);
+// Rotas de Doações
+router.get('/', donationController.getAll); // Obter todas as doações
 
-// Criar uma nova doação
-router.post(
-  '/donations',
-  authMiddleware,
-  validateDonation,
-  donationController.create
-);
-
-// Obter uma doação pelo ID
 router.get(
-  '/donations/:id',
+  '/recent',
   authMiddleware,
-  validateDonationId,
-  donationController.getById
+  donationController.getRecentDonations // Obter doações recentes
 );
 
-// Atualizar uma doação
+router.get(
+  '/:id',
+  authMiddleware,
+  validateDonationId,
+  donationController.getById // Obter uma doação pelo ID
+);
+
+router.post(
+  '/',
+  authMiddleware,
+  validateDonation,
+  donationController.create // Criar uma nova doação
+);
+
 router.put(
-  '/donations/:id',
+  '/:id',
   authMiddleware,
   validateDonationId,
   validateDonation,
-  donationController.update
+  donationController.update // Atualizar uma doação
 );
 
-// Deletar uma doação
 router.delete(
-  '/donations/:id',
+  '/:id',
   authMiddleware,
+  adminOrCollectionPointMiddleware, // Apenas admins ou responsáveis podem deletar
   validateDonationId,
-  donationController.delete
+  donationController.delete // Deletar uma doação
 );
 
 module.exports = router;

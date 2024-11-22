@@ -23,6 +23,7 @@ const donationController = {
         return [
           body('userId').isInt().withMessage('O ID do usuário deve ser um número inteiro'),
           body('disasterId').isInt().withMessage('O ID do desastre deve ser um número inteiro'),
+          body('collectionPointId').isInt().withMessage('O ID do ponto de coleta deve ser um número inteiro'),
           body('type').notEmpty().withMessage('O tipo de doação é obrigatório'),
           body('description').notEmpty().withMessage('A descrição é obrigatória'),
           body('status').isIn(['PENDING', 'APPROVED', 'REJECTED']).withMessage('Status inválido'),
@@ -39,11 +40,10 @@ const donationController = {
       case 'updateDonation': {
         return [
           param('id').isInt().withMessage('O ID deve ser um número inteiro'),
-          body('userId').optional().isInt().withMessage('O ID do usuário deve ser um número inteiro'),
-          body('disasterId').optional().isInt().withMessage('O ID do desastre deve ser um número inteiro'),
-          body('type').optional().notEmpty().withMessage('O tipo de doação é obrigatório'),
+          body('type').optional().notEmpty().withMessage('O tipo de doação deve ser preenchido'),
           body('description').optional().isString().withMessage('A descrição deve ser uma string'),
           body('status').optional().isIn(['PENDING', 'APPROVED', 'REJECTED']).withMessage('Status inválido'),
+          body('collectionPointId').optional().isInt().withMessage('O ID do ponto de coleta deve ser um número inteiro'),
           body('items').optional().isArray().withMessage('Os itens devem ser um array'),
           body('items.*.id').optional().isInt().withMessage('O ID do item deve ser um número inteiro'),
           body('items.*.quantity').optional().isInt({ min: 1 }).withMessage('A quantidade deve ser um número inteiro maior que zero'),

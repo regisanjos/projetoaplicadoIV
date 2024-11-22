@@ -73,13 +73,16 @@ model Disaster {
 model CollectionPoint {
   id        Int        @id @default(autoincrement())
   name      String
-  bairro    String
-  location  String
+  address   String
+  city      String
+  neighborhood String
   adminId   Int        @unique
   admin     User       @relation("AdminPoint", fields: [adminId], references: [id])
   donations Donation[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
+  @@unique([city, neighborhood], name: "unique_city_neighborhood")
 }
 
 model Item {
@@ -89,7 +92,6 @@ model Item {
   quantity      Int
   donationItems DonationItem[]
 }
-
 model Donation {
   id                Int              @id @default(autoincrement())
   type              String
@@ -102,13 +104,15 @@ model Donation {
   user              User             @relation(fields: [userId], references: [id])
   disasterId        Int
   disaster          Disaster         @relation(fields: [disasterId], references: [id])
-  collectionPointId Int?
-  collectionPoint   CollectionPoint? @relation(fields: [collectionPointId], references: [id])
+  collectionPointId Int
+  collectionPoint   CollectionPoint  @relation(fields: [collectionPointId], references: [id])
   donationItems     DonationItem[]
   eta               ETA?
+  trackingId        String?          @unique // Para rastrear a doação (opcional)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 }
+
 
 model DonationExit {
   id        String   @id @default(uuid())
@@ -151,4 +155,15 @@ model ETA {
   trackingNumber   String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+model Delivery {
+  id             Int      @id @default(autoincrement())
+  trackingCode   String   @unique
+  recipient      String
+  address        String
+  city           String
+  state          String
+  status         String   @default("Pendente")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
